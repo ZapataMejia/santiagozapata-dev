@@ -1,0 +1,1823 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="ISTQB CTFL Practice Quiz — Santiago Zapata" description="Practice for the ISTQB Certified Tester Foundation Level exam with 40 realistic questions covering all syllabus chapters.">
+  <div id="quiz-app">
+    <!-- MODE SELECTION -->
+    <section id="mode-screen" class="quiz-section">
+      <div class="container">
+        <div class="quiz-header fade-in">
+          <p class="section-label">ISTQB CTFL v4.0</p>
+          <h1 class="section-title">Practice Quiz</h1>
+          <p class="section-subtitle">40 realistic questions based on the official ISTQB Foundation Level syllabus. Choose a mode to begin.</p>
+        </div>
+
+        <div class="mode-cards fade-in">
+          <button class="mode-card" data-mode="full">
+            <div class="mode-icon">&#9200;</div>
+            <h3>Full Exam</h3>
+            <p>40 questions &middot; 60 min timer</p>
+            <span class="mode-tag">Simulates real exam</span>
+          </button>
+          <button class="mode-card" data-mode="quick">
+            <div class="mode-icon">&#9889;</div>
+            <h3>Quick Practice</h3>
+            <p>10 random questions &middot; No timer</p>
+            <span class="mode-tag">Fast review</span>
+          </button>
+          <button class="mode-card" data-mode="chapter">
+            <div class="mode-icon">&#128218;</div>
+            <h3>By Chapter</h3>
+            <p>Select a topic to focus on</p>
+            <span class="mode-tag">Targeted study</span>
+          </button>
+        </div>
+
+        <div id="chapter-select" class="chapter-select hidden fade-in">
+          <h3>Select a Chapter</h3>
+          <div class="chapter-buttons">
+            <button class="chapter-btn" data-chapter="1">Ch 1: Fundamentals of Testing <span class="q-count">8 Qs</span></button>
+            <button class="chapter-btn" data-chapter="2">Ch 2: Testing Throughout the SDLC <span class="q-count">7 Qs</span></button>
+            <button class="chapter-btn" data-chapter="3">Ch 3: Static Testing <span class="q-count">5 Qs</span></button>
+            <button class="chapter-btn" data-chapter="4">Ch 4: Test Design Techniques <span class="q-count">10 Qs</span></button>
+            <button class="chapter-btn" data-chapter="5">Ch 5: Test Management <span class="q-count">6 Qs</span></button>
+            <button class="chapter-btn" data-chapter="6">Ch 6: Tool Support for Testing <span class="q-count">4 Qs</span></button>
+          </div>
+        </div>
+
+        <div class="history-section fade-in" id="history-section">
+          <h3>Your History</h3>
+          <div id="history-content" class="history-content">
+            <p class="text-muted">No attempts yet. Start a quiz!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUIZ SCREEN -->
+    <section id="quiz-screen" class="quiz-section hidden">
+      <div class="quiz-topbar">
+        <div class="topbar-left">
+          <span id="quiz-mode-label" class="mode-label"></span>
+          <span id="progress-text" class="progress-text">1 / 40</span>
+        </div>
+        <div class="topbar-center">
+          <div id="timer-display" class="timer-display hidden">
+            <span class="timer-icon">&#9200;</span>
+            <span id="timer-value">60:00</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button id="btn-flag" class="btn-icon" title="Flag for review (F)">&#9873;</button>
+          <button id="btn-nav-toggle" class="btn-icon" title="Question navigator">&#9776;</button>
+          <button id="btn-end" class="btn-small btn-danger">End Quiz</button>
+        </div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar" style="width:0%"></div>
+      </div>
+
+      <div class="quiz-body container">
+        <div class="question-area">
+          <div class="question-meta">
+            <span id="q-chapter" class="q-chapter-tag"></span>
+            <span id="q-difficulty" class="q-difficulty-tag"></span>
+          </div>
+          <h2 id="q-text" class="question-text"></h2>
+          <div id="options-container" class="options-container"></div>
+        </div>
+
+        <div class="quiz-nav-buttons">
+          <button id="btn-prev" class="btn-secondary" disabled>&#8592; Previous (P)</button>
+          <button id="btn-next" class="btn-primary">Next (N) &#8594;</button>
+          <button id="btn-finish" class="btn-accent hidden">Finish Quiz</button>
+        </div>
+      </div>
+
+      <!-- Question Navigator Panel -->
+      <div id="nav-panel" class="nav-panel hidden">
+        <div class="nav-panel-header">
+          <h3>Questions</h3>
+          <button id="btn-close-nav" class="btn-icon">&times;</button>
+        </div>
+        <div class="nav-panel-legend">
+          <span class="legend-item"><span class="dot dot-answered"></span> Answered</span>
+          <span class="legend-item"><span class="dot dot-flagged"></span> Flagged</span>
+          <span class="legend-item"><span class="dot dot-current"></span> Current</span>
+          <span class="legend-item"><span class="dot dot-unanswered"></span> Unanswered</span>
+        </div>
+        <div id="nav-grid" class="nav-grid"></div>
+      </div>
+    </section>
+
+    <!-- RESULTS SCREEN -->
+    <section id="results-screen" class="quiz-section hidden">
+      <div class="container">
+        <div class="results-wrapper">
+          <div id="results-badge" class="results-badge"></div>
+          <h2 class="results-title">Quiz Complete</h2>
+          <div class="results-score-row">
+            <div class="score-circle" id="score-circle">
+              <svg viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="52" class="score-bg"/>
+                <circle cx="60" cy="60" r="52" class="score-fill" id="score-ring"/>
+              </svg>
+              <div class="score-value" id="score-value">0%</div>
+            </div>
+            <div class="results-stats">
+              <div class="stat"><span class="stat-num" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
+              <div class="stat"><span class="stat-num" id="stat-wrong">0</span><span class="stat-label">Wrong</span></div>
+              <div class="stat"><span class="stat-num" id="stat-unanswered">0</span><span class="stat-label">Unanswered</span></div>
+              <div class="stat"><span class="stat-num" id="stat-time">--:--</span><span class="stat-label">Time</span></div>
+            </div>
+          </div>
+
+          <div class="chapter-breakdown" id="chapter-breakdown"></div>
+
+          <div class="results-actions">
+            <button id="btn-review" class="btn-primary">Review Answers</button>
+            <button id="btn-retry" class="btn-secondary">Try Again</button>
+            <button id="btn-home" class="btn-secondary">Back to Menu</button>
+          </div>
+        </div>
+
+        <!-- Review Mode -->
+        <div id="review-section" class="review-section hidden">
+          <h3>Answer Review</h3>
+          <div id="review-list" class="review-list"></div>
+          <button id="btn-back-results" class="btn-secondary" style="margin-top:24px">Back to Results</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const QUESTIONS = [
+      // ===== CHAPTER 1: FUNDAMENTALS OF TESTING (8) =====
+      {
+        id: 1, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "easy",
+        text: "Which of the following BEST describes a key principle of testing?",
+        options: [
+          "Testing can prove that software is defect-free",
+          "Exhaustive testing is achievable given enough time and resources",
+          "Testing shows the presence of defects, not their absence",
+          "Early testing saves time but not cost"
+        ],
+        correct: 2,
+        explanation: "One of the seven principles of testing states: 'Testing shows the presence of defects, not their absence.' Testing can reduce the probability of undiscovered defects, but even if no defects are found, it is not a proof of correctness."
+      },
+      {
+        id: 2, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "medium",
+        text: "A programmer makes an error (mistake) in the code. This leads to a defect in the software, which during execution causes a ___.",
+        options: [
+          "Bug report",
+          "Failure",
+          "Test incident",
+          "Regression"
+        ],
+        correct: 1,
+        explanation: "The chain is: A person makes an error (mistake) → This introduces a defect (bug/fault) in the work product → When executed, the defect may cause a failure (observable incorrect behavior). Not every defect causes a failure."
+      },
+      {
+        id: 3, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "easy",
+        text: "Which activity is part of the testing process but NOT a tester's responsibility?",
+        options: [
+          "Test planning",
+          "Debugging (fixing defects in code)",
+          "Test execution",
+          "Evaluating exit criteria"
+        ],
+        correct: 1,
+        explanation: "Debugging is the developer's activity of finding, analyzing, and fixing the cause of a failure. Testers are responsible for finding failures (testing), while developers are responsible for debugging. Testers may assist with reproducing the issue."
+      },
+      {
+        id: 4, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "medium",
+        text: "According to the 'Pesticide Paradox' principle, what should testers do?",
+        options: [
+          "Always use the same test cases to ensure consistency",
+          "Regularly review and revise tests, adding new and different tests",
+          "Run test cases less frequently to avoid false confidence",
+          "Only test areas where defects were previously found"
+        ],
+        correct: 1,
+        explanation: "The Pesticide Paradox states that if the same tests are repeated over and over, eventually they will no longer find new defects. Test cases need to be regularly reviewed and revised, and new tests need to be written to cover previously untested areas."
+      },
+      {
+        id: 5, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "medium",
+        text: "Which testing principle states that a small number of modules usually contain most of the defects discovered?",
+        options: [
+          "Absence-of-errors fallacy",
+          "Testing is context dependent",
+          "Defect clustering",
+          "Pesticide paradox"
+        ],
+        correct: 2,
+        explanation: "Defect clustering states that a small number of modules usually contain most of the defects discovered during pre-release testing, or are responsible for most operational failures. This is consistent with the Pareto principle (80/20 rule)."
+      },
+      {
+        id: 6, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "hard",
+        text: "Which statement BEST describes the 'absence-of-errors' fallacy?",
+        options: [
+          "Finding and fixing defects does not help if the system built is unusable or does not fulfill users' needs",
+          "It is impossible to test software without some errors remaining",
+          "If no errors are reported during testing, the software is ready for release",
+          "Absence of errors in testing means the test cases were poorly designed"
+        ],
+        correct: 0,
+        explanation: "The absence-of-errors fallacy states that finding and fixing defects does not help if the system built is unusable and does not fulfill the users' needs and expectations. A 99% bug-free system is useless if it doesn't meet requirements."
+      },
+      {
+        id: 7, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "easy",
+        text: "What is the PRIMARY objective of testing?",
+        options: [
+          "To prove the software works correctly",
+          "To find as many failures as possible before release",
+          "To evaluate work products to reduce the risk of failures in operation",
+          "To ensure developers write better code"
+        ],
+        correct: 2,
+        explanation: "The primary objective of testing is to evaluate work products such as requirements, user stories, design, and code to reduce the risk of software failures in operation. Other objectives include finding defects, providing information to stakeholders, and building confidence in quality."
+      },
+      {
+        id: 8, chapter: 1, chapterName: "Fundamentals of Testing", difficulty: "hard",
+        text: "Which of the following is NOT a valid testing objective?",
+        options: [
+          "Verifying that specified requirements have been fulfilled",
+          "Validating whether the test object is complete",
+          "Providing sufficient information for stakeholder decision-making",
+          "Guaranteeing no remaining defects exist in the software"
+        ],
+        correct: 3,
+        explanation: "Testing cannot guarantee that no defects remain. Testing objectives include verifying requirements, finding defects, providing information to stakeholders, building confidence in quality, and validating completeness — but never guaranteeing the absence of all defects."
+      },
+
+      // ===== CHAPTER 2: TESTING THROUGHOUT THE SDLC (7) =====
+      {
+        id: 9, chapter: 2, chapterName: "Testing Throughout the SDLC", difficulty: "easy",
+        text: "In the V-model, which test level corresponds to the requirements specification phase?",
+        options: [
+          "Unit testing",
+          "Integration testing",
+          "System testing",
+          "Acceptance testing"
+        ],
+        correct: 3,
+        explanation: "In the V-model, each development phase has a corresponding test level. Requirements specification corresponds to acceptance testing, system design corresponds to system testing, architectural design corresponds to integration testing, and detailed design corresponds to unit testing."
+      },
+      {
+        id: 10, chapter: 2, chapterName: "Testing Throughout the SDLC", difficulty: "medium",
+        text: "Which test level focuses on interactions between components or systems?",
+        options: [
+          "Component testing",
+          "Integration testing",
+          "System testing",
+          "Acceptance testing"
+        ],
+        correct: 1,
+        explanation: "Integration testing focuses on testing interfaces and interactions between integrated components or systems. It verifies that combined components work together as designed. This can be component integration testing or system integration testing."
+      },
+      {
+        id: 11, chapter: 2, chapterName: "Testing Throughout the SDLC", difficulty: "medium",
+        text: "Which type of acceptance testing is performed at the developer's site by the customer before the product is released?",
+        options: [
+          "Operational acceptance testing",
+          "Alpha testing",
+          "Beta testing",
+          "Contractual acceptance testing"
+        ],
+        correct: 1,
+        explanation: "Alpha testing is performed at the developing organization's site by potential or existing customers or independent testers. Beta testing is performed by customers at their own locations. Operational acceptance testing is done by operations/sysadmin staff."
+      },
+      {
+        id: 12, chapter: 2, chapterName: "Testing Throughout the SDLC", difficulty: "hard",
+        text: "Which of the following is a characteristic of good testing in any SDLC model?",
+        options: [
+          "Testing begins only after coding is complete",
+          "Testers are involved only during the test execution phase",
+          "For every development activity, there is a corresponding testing activity",
+          "Test design starts after the test environment is ready"
+        ],
+        correct: 2,
+        explanation: "A key principle of good testing practice is that for every software development activity there is a corresponding test activity. Test analysis and design should begin during the corresponding development activity. This applies across all SDLC models."
+      },
+      {
+        id: 13, chapter: 2, chapterName: "Testing Throughout the SDLC", difficulty: "medium",
+        text: "What is the MAIN purpose of regression testing?",
+        options: [
+          "To test new functionality that was just added",
+          "To detect defects that were introduced by changes",
+          "To verify that the software meets performance requirements",
+          "To test backward compatibility with older versions"
+        ],
+        correct: 1,
+        explanation: "Regression testing is performed to detect unintended side effects introduced by changes (bug fixes, enhancements, patches, configuration changes). Previously passing tests are re-run to verify that existing functionality still works correctly after changes."
+      },
+      {
+        id: 14, chapter: 2, chapterName: "Testing Throughout the SDLC", difficulty: "easy",
+        text: "Which test level typically uses stubs and drivers?",
+        options: [
+          "Acceptance testing",
+          "System testing",
+          "Component integration testing",
+          "Operational testing"
+        ],
+        correct: 2,
+        explanation: "Component integration testing uses stubs and drivers to simulate components that are not yet integrated. A stub replaces a called component, while a driver replaces a calling component. These test harness elements enable testing of interactions before all components are available."
+      },
+      {
+        id: 15, chapter: 2, chapterName: "Testing Throughout the SDLC", difficulty: "hard",
+        text: "Which of the following triggers for maintenance testing involves modifying a tested system to work in a different environment?",
+        options: [
+          "Modification (planned enhancement)",
+          "Migration (platform change)",
+          "Retirement (system decommission)",
+          "Correction (emergency fix)"
+        ],
+        correct: 1,
+        explanation: "Migration testing is triggered when a system is moved to a different platform or environment (e.g., from on-premises to cloud). It requires testing the new environment as well as any changed software. Retirement testing focuses on data migration and archiving when a system is decommissioned."
+      },
+
+      // ===== CHAPTER 3: STATIC TESTING (5) =====
+      {
+        id: 16, chapter: 3, chapterName: "Static Testing", difficulty: "easy",
+        text: "Which of the following is an example of static testing?",
+        options: [
+          "Running unit tests",
+          "Reviewing the requirements specification document",
+          "Executing performance tests",
+          "Running exploratory test sessions"
+        ],
+        correct: 1,
+        explanation: "Static testing involves examining work products without executing code. This includes reviews (inspections, walkthroughs, technical reviews) of documents such as requirements, design documents, and code. Running any type of test that executes code is dynamic testing."
+      },
+      {
+        id: 17, chapter: 3, chapterName: "Static Testing", difficulty: "medium",
+        text: "In a formal review process, who is responsible for deciding on the execution of reviews, allocating time, and determining if review objectives have been met?",
+        options: [
+          "Moderator/Facilitator",
+          "Review leader",
+          "Manager",
+          "Author"
+        ],
+        correct: 2,
+        explanation: "The manager is responsible for deciding on the execution of reviews, allocating time in project schedules, and determining if the review process objectives have been met. The moderator facilitates the meeting, the review leader takes overall responsibility for the review, and the author created the work product."
+      },
+      {
+        id: 18, chapter: 3, chapterName: "Static Testing", difficulty: "hard",
+        text: "Which review type is the MOST formal and follows a defined process with documented roles?",
+        options: [
+          "Informal review",
+          "Walkthrough",
+          "Technical review",
+          "Inspection"
+        ],
+        correct: 3,
+        explanation: "Inspection is the most formal review type. It follows a defined process with formally assigned roles (moderator, author, reviewers, scribe). It uses entry/exit criteria, checklists, and metrics are collected. It is led by a trained moderator (not the author) and includes a formal follow-up process."
+      },
+      {
+        id: 19, chapter: 3, chapterName: "Static Testing", difficulty: "medium",
+        text: "Which of the following defects is MOST likely to be found by static analysis tools rather than dynamic testing?",
+        options: [
+          "Memory leaks during sustained load",
+          "Unreachable code (dead code)",
+          "Incorrect output calculation",
+          "Usability issues"
+        ],
+        correct: 1,
+        explanation: "Static analysis tools excel at finding structural defects such as unreachable (dead) code, undefined variables, uncalled functions, security vulnerabilities in code patterns, and coding standard violations — all without executing the code. Memory leaks under load and incorrect calculations require dynamic testing."
+      },
+      {
+        id: 20, chapter: 3, chapterName: "Static Testing", difficulty: "medium",
+        text: "In a walkthrough, who typically leads the review?",
+        options: [
+          "A trained moderator",
+          "The author of the work product",
+          "The project manager",
+          "An independent test lead"
+        ],
+        correct: 1,
+        explanation: "A walkthrough is led by the author of the work product, who guides the participants through the document and explains its content. This differs from an inspection, which is led by a trained moderator. Walkthroughs are less formal and can serve to educate participants about the work product."
+      },
+
+      // ===== CHAPTER 4: TEST DESIGN TECHNIQUES (10) =====
+      {
+        id: 21, chapter: 4, chapterName: "Test Design Techniques", difficulty: "easy",
+        text: "A field accepts ages from 18 to 65. Using equivalence partitioning, which set represents the MINIMUM valid and invalid partitions?",
+        options: [
+          "Valid: {18-65}; Invalid: {<18}, {>65}",
+          "Valid: {18}, {40}, {65}; Invalid: {17}, {66}",
+          "Valid: {1-65}; Invalid: {66-100}",
+          "Valid: {18-65}; Invalid: {0-17}"
+        ],
+        correct: 0,
+        explanation: "Equivalence partitioning divides input data into partitions where all values should be treated the same. For ages 18-65: one valid partition {18-65} and two invalid partitions {values < 18} and {values > 65}. One test value from each partition is sufficient for minimum coverage."
+      },
+      {
+        id: 22, chapter: 4, chapterName: "Test Design Techniques", difficulty: "medium",
+        text: "A function accepts values between 1 and 100 (inclusive). Using two-value boundary value analysis, which values should be tested?",
+        options: [
+          "0, 1, 50, 100, 101",
+          "0, 1, 100, 101",
+          "1, 2, 99, 100",
+          "-1, 0, 1, 100, 101, 102"
+        ],
+        correct: 1,
+        explanation: "Two-value boundary value analysis (standard BVA) tests the boundary value and its closest neighbor outside the partition. For range 1-100: test 0 (just below lower), 1 (lower boundary), 100 (upper boundary), and 101 (just above upper). This gives 4 test values."
+      },
+      {
+        id: 23, chapter: 4, chapterName: "Test Design Techniques", difficulty: "hard",
+        text: "A system has 3 conditions, each of which can be True or False. How many columns (test cases) does a full decision table require?",
+        options: [
+          "3",
+          "6",
+          "8",
+          "16"
+        ],
+        correct: 2,
+        explanation: "A full decision table has 2^n columns where n is the number of conditions. With 3 conditions, each True or False, there are 2³ = 8 possible combinations. Each column represents a unique combination of condition values and its expected outcome(s)."
+      },
+      {
+        id: 24, chapter: 4, chapterName: "Test Design Techniques", difficulty: "medium",
+        text: "In state transition testing, what does 0-switch coverage mean?",
+        options: [
+          "All states have been visited",
+          "All transitions have been exercised at least once",
+          "All pairs of consecutive transitions have been tested",
+          "All invalid transitions have been tested"
+        ],
+        correct: 1,
+        explanation: "0-switch coverage means every valid transition has been exercised at least once (covering all single transitions). 1-switch coverage covers all pairs of consecutive transitions (sequences of two transitions). N-switch coverage extends this to sequences of N+1 transitions."
+      },
+      {
+        id: 25, chapter: 4, chapterName: "Test Design Techniques", difficulty: "easy",
+        text: "Which test design technique is MOST appropriate when testing a workflow with a clear sequence of steps that an end user follows?",
+        options: [
+          "Equivalence partitioning",
+          "Decision table testing",
+          "Use case testing",
+          "Boundary value analysis"
+        ],
+        correct: 2,
+        explanation: "Use case testing derives test cases from use cases, which describe interactions between actors and the system. It is ideal for testing workflows and business scenarios with defined sequences of steps, including the main success scenario and alternative/exception flows."
+      },
+      {
+        id: 26, chapter: 4, chapterName: "Test Design Techniques", difficulty: "hard",
+        text: "Consider the code: if (a > 0 && b > 0) { x = a; } else { x = b; }. Which test set achieves 100% branch/decision coverage?",
+        options: [
+          "a=1, b=1",
+          "a=1, b=1 and a=-1, b=1",
+          "a=1, b=1 and a=0, b=0",
+          "a=0, b=1 and a=1, b=0"
+        ],
+        correct: 2,
+        explanation: "Branch/decision coverage requires each decision outcome (True and False) to be tested. Test 1: a=1, b=1 → condition is True, takes the if-branch. Test 2: a=0, b=0 → condition is False, takes the else-branch. Both branches are covered. Option D also works but option C is the most straightforward."
+      },
+      {
+        id: 27, chapter: 4, chapterName: "Test Design Techniques", difficulty: "medium",
+        text: "What is the relationship between statement coverage and decision coverage?",
+        options: [
+          "They are identical metrics",
+          "100% statement coverage guarantees 100% decision coverage",
+          "100% decision coverage guarantees 100% statement coverage",
+          "They are unrelated metrics"
+        ],
+        correct: 2,
+        explanation: "100% decision coverage guarantees 100% statement coverage, but NOT the other way around. If all decision outcomes are tested (all branches taken), all statements must have been executed. However, 100% statement coverage can be achieved without covering all branches (e.g., if both outcomes of a decision execute some statements)."
+      },
+      {
+        id: 28, chapter: 4, chapterName: "Test Design Techniques", difficulty: "easy",
+        text: "Which of the following is an experience-based test technique?",
+        options: [
+          "Boundary value analysis",
+          "State transition testing",
+          "Error guessing",
+          "Decision table testing"
+        ],
+        correct: 2,
+        explanation: "Error guessing is an experience-based technique where the tester uses knowledge and experience to anticipate what defects might be present and designs tests to expose them. Other experience-based techniques include exploratory testing and checklist-based testing. BVA, state transition, and decision tables are black-box techniques."
+      },
+      {
+        id: 29, chapter: 4, chapterName: "Test Design Techniques", difficulty: "medium",
+        text: "During exploratory testing, what is a 'test charter'?",
+        options: [
+          "A detailed test case document",
+          "A statement of test objectives guiding a time-boxed session",
+          "An automated test script",
+          "The final test report"
+        ],
+        correct: 1,
+        explanation: "In exploratory testing, a test charter is a brief statement of the test objectives that guides a time-boxed test session. It provides focus (e.g., 'Explore the login feature with invalid credentials to find security issues') while allowing the tester creative freedom in how to test."
+      },
+      {
+        id: 30, chapter: 4, chapterName: "Test Design Techniques", difficulty: "hard",
+        text: "Which black-box technique is BEST suited when the system behavior depends on current state and transitions caused by events?",
+        options: [
+          "Equivalence partitioning",
+          "Decision table testing",
+          "State transition testing",
+          "Use case testing"
+        ],
+        correct: 2,
+        explanation: "State transition testing is the best technique when the system can be modeled with distinct states, transitions between states triggered by events, and different behavior depending on the current state. Examples include login mechanisms (locked after N failures), vending machines, and protocol implementations."
+      },
+
+      // ===== CHAPTER 5: TEST MANAGEMENT (6) =====
+      {
+        id: 31, chapter: 5, chapterName: "Test Management", difficulty: "easy",
+        text: "Which of the following is typically documented in a test plan?",
+        options: [
+          "Detailed test case steps",
+          "Test schedule, scope, approach, and resources",
+          "Actual test results and logs",
+          "Source code documentation"
+        ],
+        correct: 1,
+        explanation: "A test plan documents the scope, approach, resources, and schedule of testing activities. It identifies test items, features to test, testing tasks, who will do each task, the test environment, entry and exit criteria, and risks. Detailed test cases and results belong in separate documents."
+      },
+      {
+        id: 32, chapter: 5, chapterName: "Test Management", difficulty: "medium",
+        text: "What are 'exit criteria' in the context of testing?",
+        options: [
+          "Conditions that must be met before testing can begin",
+          "Steps to decommission the test environment",
+          "Conditions that define when a test activity is considered complete",
+          "Metrics collected after test execution"
+        ],
+        correct: 2,
+        explanation: "Exit criteria (also called 'definition of done') define the conditions that must be met to declare a test level or set of tests as complete. Examples include: required coverage levels achieved, number of unresolved defects below threshold, and all planned tests executed. Entry criteria define when testing can begin."
+      },
+      {
+        id: 33, chapter: 5, chapterName: "Test Management", difficulty: "hard",
+        text: "In risk-based testing, how does product risk level influence test effort?",
+        options: [
+          "Higher risk items are tested last to allow more preparation time",
+          "All items receive equal test effort regardless of risk",
+          "Higher risk items receive more thorough testing and are tested earlier",
+          "Risk levels only affect test reporting, not execution"
+        ],
+        correct: 2,
+        explanation: "In risk-based testing, the level of risk is used to prioritize testing. Higher risk items are tested earlier and more thoroughly (more test cases, more coverage). Lower risk items are tested later and less extensively. This helps ensure the most important defects are found first when time and resources are limited."
+      },
+      {
+        id: 34, chapter: 5, chapterName: "Test Management", difficulty: "medium",
+        text: "Which of the following is a valid test estimation technique?",
+        options: [
+          "Random estimation",
+          "Expert-based estimation (using experience of specialists)",
+          "Customer-based estimation (asking the client how long it should take)",
+          "Defect-based estimation (counting known defects)"
+        ],
+        correct: 1,
+        explanation: "Expert-based estimation relies on the experience of test specialists, developers, and other stakeholders to estimate testing effort. Another standard approach is metrics-based estimation using historical data. Both are recognized by ISTQB. Random or customer-based estimates are not standard approaches."
+      },
+      {
+        id: 35, chapter: 5, chapterName: "Test Management", difficulty: "medium",
+        text: "A defect report should contain sufficient information to do what?",
+        options: [
+          "Allow the developer to blame the person who introduced the defect",
+          "Enable identification, isolation, and correction of the defect",
+          "Calculate the total cost of quality for the project",
+          "Justify the tester's productivity metrics"
+        ],
+        correct: 1,
+        explanation: "A good defect report should provide enough information to identify, isolate, and correct the defect, and to verify the fix. Key elements include: summary, steps to reproduce, expected vs actual result, severity, priority, environment details, and evidence (screenshots, logs)."
+      },
+      {
+        id: 36, chapter: 5, chapterName: "Test Management", difficulty: "hard",
+        text: "What is the difference between the 'severity' and 'priority' of a defect?",
+        options: [
+          "They mean the same thing",
+          "Severity indicates the impact on the system; priority indicates how urgently it should be fixed",
+          "Priority indicates the impact on the system; severity indicates how urgently it should be fixed",
+          "Severity is set by developers; priority is set by testers"
+        ],
+        correct: 1,
+        explanation: "Severity describes the degree of impact of a defect on the system (e.g., critical, major, minor, trivial). Priority indicates how urgently the defect should be fixed (e.g., fix immediately, fix before next release, fix when convenient). A cosmetic defect on the home page might be low severity but high priority."
+      },
+
+      // ===== CHAPTER 6: TOOL SUPPORT FOR TESTING (4) =====
+      {
+        id: 37, chapter: 6, chapterName: "Tool Support for Testing", difficulty: "easy",
+        text: "Which of the following is a potential BENEFIT of test automation?",
+        options: [
+          "It eliminates the need for test planning",
+          "It can reduce time for repetitive test execution",
+          "It always finds more defects than manual testing",
+          "It removes the need for skilled testers"
+        ],
+        correct: 1,
+        explanation: "Test automation reduces time for repetitive test execution (especially regression tests), enables consistent and repeatable tests, and can provide faster feedback. However, it does NOT eliminate planning, always find more defects, or remove the need for skilled testers — it requires skilled people to design, implement, and maintain."
+      },
+      {
+        id: 38, chapter: 6, chapterName: "Tool Support for Testing", difficulty: "medium",
+        text: "Which of the following is a RISK of test automation?",
+        options: [
+          "Tests execute too quickly",
+          "Unrealistic expectations, including underestimating maintenance effort",
+          "Too many defects are found too early",
+          "The team becomes too efficient"
+        ],
+        correct: 1,
+        explanation: "Common risks of test automation include: unrealistic expectations about what automation can achieve, underestimating the effort to maintain automated tests as the software evolves, over-reliance on automation (neglecting manual techniques), and insufficient skills to develop the automation framework."
+      },
+      {
+        id: 39, chapter: 6, chapterName: "Tool Support for Testing", difficulty: "medium",
+        text: "Which type of tool is used to capture and replay user interactions with an application?",
+        options: [
+          "Static analysis tool",
+          "Test management tool",
+          "Test execution tool (capture/playback)",
+          "Requirements management tool"
+        ],
+        correct: 2,
+        explanation: "Test execution tools with capture/playback functionality record user interactions (mouse clicks, keyboard input) and can replay them. While useful for creating initial scripts, captured scripts are typically fragile and require maintenance. Modern approaches favor scripted or keyword-driven automation."
+      },
+      {
+        id: 40, chapter: 6, chapterName: "Tool Support for Testing", difficulty: "hard",
+        text: "When introducing a test tool into an organization, which of the following is the RECOMMENDED first step?",
+        options: [
+          "Purchase the most popular tool on the market",
+          "Immediately automate all existing test cases",
+          "Conduct a proof-of-concept evaluation to assess the tool against requirements",
+          "Train all testers before evaluating any tool"
+        ],
+        correct: 2,
+        explanation: "Before committing to a tool, a proof-of-concept (pilot project) should be conducted to evaluate the tool against the organization's specific requirements, constraints, and existing processes. This reduces risk, validates assumptions, and provides evidence for decision-making. Buying or training prematurely can waste resources."
+      }
+    ];
+
+    const CHAPTERS = {
+      1: "Fundamentals of Testing",
+      2: "Testing Throughout the SDLC",
+      3: "Static Testing",
+      4: "Test Design Techniques",
+      5: "Test Management",
+      6: "Tool Support for Testing"
+    };
+
+    const STORAGE_KEY = "istqb_quiz_history";
+
+    let state = {
+      mode: null,
+      questions: [],
+      currentIndex: 0,
+      answers: {},
+      flagged: new Set(),
+      timerInterval: null,
+      timeRemaining: 0,
+      startTime: null,
+      finished: false
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function showScreen(id) {
+      $$('.quiz-section').forEach(s => s.classList.add('hidden'));
+      $(`#${id}`).classList.remove('hidden');
+    }
+
+    // MODE SELECTION
+    $$('.mode-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const mode = card.dataset.mode;
+        if (mode === 'chapter') {
+          $('#chapter-select').classList.remove('hidden');
+          $$('.mode-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+        } else if (mode === 'full') {
+          startQuiz('full', QUESTIONS);
+        } else if (mode === 'quick') {
+          startQuiz('quick', shuffle(QUESTIONS).slice(0, 10));
+        }
+      });
+    });
+
+    $$('.chapter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ch = parseInt(btn.dataset.chapter);
+        const filtered = QUESTIONS.filter(q => q.chapter === ch);
+        startQuiz('chapter', filtered, ch);
+      });
+    });
+
+    function startQuiz(mode, questions, chapter) {
+      state = {
+        mode,
+        questions: [...questions],
+        currentIndex: 0,
+        answers: {},
+        flagged: new Set(),
+        timerInterval: null,
+        timeRemaining: mode === 'full' ? 3600 : 0,
+        startTime: Date.now(),
+        finished: false
+      };
+
+      let label = 'Full Exam';
+      if (mode === 'quick') label = 'Quick Practice';
+      if (mode === 'chapter') label = `Chapter ${chapter}: ${CHAPTERS[chapter]}`;
+      $('#quiz-mode-label').textContent = label;
+
+      if (mode === 'full') {
+        $('#timer-display').classList.remove('hidden');
+        startTimer();
+      } else {
+        $('#timer-display').classList.add('hidden');
+      }
+
+      showScreen('quiz-screen');
+      renderQuestion();
+      buildNavGrid();
+    }
+
+    function startTimer() {
+      updateTimerDisplay();
+      state.timerInterval = setInterval(() => {
+        state.timeRemaining--;
+        updateTimerDisplay();
+        if (state.timeRemaining <= 0) {
+          clearInterval(state.timerInterval);
+          finishQuiz();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(state.timeRemaining / 60);
+      const s = state.timeRemaining % 60;
+      const display = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      $('#timer-value').textContent = display;
+      if (state.timeRemaining < 300) {
+        $('#timer-display').classList.add('warning');
+      }
+    }
+
+    function renderQuestion() {
+      const q = state.questions[state.currentIndex];
+      const total = state.questions.length;
+      const idx = state.currentIndex;
+
+      $('#progress-text').textContent = `${idx + 1} / ${total}`;
+      $('#progress-bar').style.width = `${((idx + 1) / total) * 100}%`;
+      $('#q-chapter').textContent = `Ch ${q.chapter}: ${q.chapterName}`;
+      $('#q-difficulty').textContent = q.difficulty;
+      $('#q-difficulty').className = `q-difficulty-tag diff-${q.difficulty}`;
+      $('#q-text').textContent = q.text;
+
+      const labels = ['A', 'B', 'C', 'D'];
+      const container = $('#options-container');
+      container.innerHTML = '';
+
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        if (state.answers[q.id] === i) btn.classList.add('selected');
+        btn.innerHTML = `<span class="option-letter">${labels[i]}</span><span class="option-text">${opt}</span>`;
+        btn.addEventListener('click', () => selectAnswer(q.id, i));
+        container.appendChild(btn);
+      });
+
+      $('#btn-flag').classList.toggle('flagged', state.flagged.has(q.id));
+      $('#btn-prev').disabled = idx === 0;
+
+      if (idx === total - 1) {
+        $('#btn-next').classList.add('hidden');
+        $('#btn-finish').classList.remove('hidden');
+      } else {
+        $('#btn-next').classList.remove('hidden');
+        $('#btn-finish').classList.add('hidden');
+      }
+
+      updateNavGrid();
+    }
+
+    function selectAnswer(qId, optIndex) {
+      state.answers[qId] = optIndex;
+      $$('.option-btn').forEach((btn, i) => {
+        btn.classList.toggle('selected', i === optIndex);
+      });
+      updateNavGrid();
+    }
+
+    function goNext() {
+      if (state.currentIndex < state.questions.length - 1) {
+        state.currentIndex++;
+        renderQuestion();
+      }
+    }
+
+    function goPrev() {
+      if (state.currentIndex > 0) {
+        state.currentIndex--;
+        renderQuestion();
+      }
+    }
+
+    function goToQuestion(idx) {
+      state.currentIndex = idx;
+      renderQuestion();
+      $('#nav-panel').classList.add('hidden');
+    }
+
+    function toggleFlag() {
+      const q = state.questions[state.currentIndex];
+      if (state.flagged.has(q.id)) {
+        state.flagged.delete(q.id);
+      } else {
+        state.flagged.add(q.id);
+      }
+      $('#btn-flag').classList.toggle('flagged', state.flagged.has(q.id));
+      updateNavGrid();
+    }
+
+    function buildNavGrid() {
+      const grid = $('#nav-grid');
+      grid.innerHTML = '';
+      state.questions.forEach((q, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-cell';
+        btn.textContent = i + 1;
+        btn.addEventListener('click', () => goToQuestion(i));
+        grid.appendChild(btn);
+      });
+      updateNavGrid();
+    }
+
+    function updateNavGrid() {
+      const cells = $$('.nav-cell');
+      cells.forEach((cell, i) => {
+        const q = state.questions[i];
+        cell.className = 'nav-cell';
+        if (i === state.currentIndex) cell.classList.add('current');
+        if (state.answers[q.id] !== undefined) cell.classList.add('answered');
+        if (state.flagged.has(q.id)) cell.classList.add('nav-flagged');
+      });
+    }
+
+    function finishQuiz() {
+      if (state.finished) return;
+      state.finished = true;
+      if (state.timerInterval) clearInterval(state.timerInterval);
+
+      const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+      const total = state.questions.length;
+      let correct = 0;
+      const chapterStats = {};
+
+      state.questions.forEach(q => {
+        if (!chapterStats[q.chapter]) {
+          chapterStats[q.chapter] = { name: q.chapterName, total: 0, correct: 0 };
+        }
+        chapterStats[q.chapter].total++;
+        if (state.answers[q.id] === q.correct) {
+          correct++;
+          chapterStats[q.chapter].correct++;
+        }
+      });
+
+      const pct = Math.round((correct / total) * 100);
+      const passed = pct >= 65;
+      const wrong = total - correct - Object.keys(state.answers).length < total
+        ? total - correct - (total - Object.keys(state.answers).length)
+        : total - correct;
+      const unanswered = total - Object.keys(state.answers).length;
+
+      $('#results-badge').textContent = passed ? 'PASSED' : 'FAILED';
+      $('#results-badge').className = `results-badge ${passed ? 'badge-pass' : 'badge-fail'}`;
+      $('#score-value').textContent = `${pct}%`;
+
+      const circumference = 2 * Math.PI * 52;
+      const ring = $('#score-ring');
+      ring.style.strokeDasharray = circumference;
+      ring.style.strokeDashoffset = circumference;
+      ring.style.stroke = passed ? 'var(--accent)' : '#ef4444';
+      setTimeout(() => {
+        ring.style.strokeDashoffset = circumference - (pct / 100) * circumference;
+      }, 100);
+
+      $('#stat-correct').textContent = correct;
+      $('#stat-wrong').textContent = wrong > 0 ? wrong : total - correct;
+      $('#stat-unanswered').textContent = unanswered > 0 ? unanswered : 0;
+      const m = Math.floor(elapsed / 60);
+      const s = elapsed % 60;
+      $('#stat-time').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+      const breakdownEl = $('#chapter-breakdown');
+      breakdownEl.innerHTML = '<h3>Score by Chapter</h3>';
+      Object.entries(chapterStats).sort((a,b) => a[0] - b[0]).forEach(([ch, data]) => {
+        const chPct = Math.round((data.correct / data.total) * 100);
+        breakdownEl.innerHTML += `
+          <div class="chapter-row">
+            <span class="ch-name">Ch ${ch}: ${data.name}</span>
+            <div class="ch-bar-bg"><div class="ch-bar-fill" style="width:${chPct}%"></div></div>
+            <span class="ch-score">${data.correct}/${data.total}</span>
+          </div>`;
+      });
+
+      saveHistory(pct, correct, total, elapsed, passed);
+      showScreen('results-screen');
+    }
+
+    function saveHistory(pct, correct, total, elapsed, passed) {
+      const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      history.push({
+        date: new Date().toISOString(),
+        mode: state.mode,
+        score: pct,
+        correct,
+        total,
+        time: elapsed,
+        passed
+      });
+      if (history.length > 50) history.shift();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    }
+
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const el = $('#history-content');
+      if (!history.length) {
+        el.innerHTML = '<p class="text-muted">No attempts yet. Start a quiz!</p>';
+        return;
+      }
+      const best = Math.max(...history.map(h => h.score));
+      const recent = history.slice(-5).reverse();
+      el.innerHTML = `
+        <div class="history-best">Best Score: <strong>${best}%</strong></div>
+        <div class="history-list">
+          ${recent.map(h => `
+            <div class="history-item">
+              <span class="hi-date">${new Date(h.date).toLocaleDateString()}</span>
+              <span class="hi-mode">${h.mode}</span>
+              <span class="hi-score ${h.passed ? 'hi-pass' : 'hi-fail'}">${h.score}%</span>
+              <span class="hi-detail">${h.correct}/${h.total}</span>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    function showReview() {
+      const list = $('#review-list');
+      list.innerHTML = '';
+      const labels = ['A', 'B', 'C', 'D'];
+
+      state.questions.forEach((q, i) => {
+        const userAnswer = state.answers[q.id];
+        const isCorrect = userAnswer === q.correct;
+        const card = document.createElement('div');
+        card.className = `review-card ${isCorrect ? 'review-correct' : 'review-wrong'}`;
+        card.innerHTML = `
+          <div class="review-q-head">
+            <span class="review-num">Q${i + 1}</span>
+            <span class="q-chapter-tag">Ch ${q.chapter}</span>
+            <span class="q-difficulty-tag diff-${q.difficulty}">${q.difficulty}</span>
+            <span class="review-result ${isCorrect ? 'rr-correct' : 'rr-wrong'}">${isCorrect ? '✓ Correct' : '✗ Incorrect'}</span>
+          </div>
+          <p class="review-q-text">${q.text}</p>
+          <div class="review-options">
+            ${q.options.map((opt, j) => {
+              let cls = 'review-opt';
+              if (j === q.correct) cls += ' review-opt-correct';
+              if (j === userAnswer && j !== q.correct) cls += ' review-opt-wrong';
+              return `<div class="${cls}"><span class="option-letter">${labels[j]}</span> ${opt}</div>`;
+            }).join('')}
+          </div>
+          <div class="review-explanation">
+            <strong>Explanation:</strong> ${q.explanation}
+          </div>`;
+        list.appendChild(card);
+      });
+
+      $('#review-section').classList.remove('hidden');
+      $('#review-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // EVENT LISTENERS
+    $('#btn-next').addEventListener('click', goNext);
+    $('#btn-prev').addEventListener('click', goPrev);
+    $('#btn-flag').addEventListener('click', toggleFlag);
+    $('#btn-finish').addEventListener('click', () => {
+      const unanswered = state.questions.length - Object.keys(state.answers).length;
+      if (unanswered > 0) {
+        if (!confirm(`You have ${unanswered} unanswered question(s). Finish anyway?`)) return;
+      }
+      finishQuiz();
+    });
+    $('#btn-end').addEventListener('click', () => {
+      if (confirm('Are you sure you want to end the quiz?')) finishQuiz();
+    });
+    $('#btn-nav-toggle').addEventListener('click', () => {
+      $('#nav-panel').classList.toggle('hidden');
+    });
+    $('#btn-close-nav').addEventListener('click', () => {
+      $('#nav-panel').classList.add('hidden');
+    });
+    $('#btn-review').addEventListener('click', showReview);
+    $('#btn-back-results').addEventListener('click', () => {
+      $('#review-section').classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    $('#btn-retry').addEventListener('click', () => {
+      showScreen('quiz-screen');
+      startQuiz(state.mode, state.mode === 'quick' ? shuffle(QUESTIONS).slice(0, 10) : state.questions);
+    });
+    $('#btn-home').addEventListener('click', () => {
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      showScreen('mode-screen');
+      loadHistory();
+    });
+
+    // KEYBOARD NAVIGATION
+    document.addEventListener('keydown', (e) => {
+      if ($('#quiz-screen').classList.contains('hidden')) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'n' || key === 'arrowright') { e.preventDefault(); goNext(); }
+      if (key === 'p' || key === 'arrowleft') { e.preventDefault(); goPrev(); }
+      if (key === 'f') { e.preventDefault(); toggleFlag(); }
+      if (['1','2','3','4'].includes(key)) {
+        e.preventDefault();
+        const q = state.questions[state.currentIndex];
+        selectAnswer(q.id, parseInt(key) - 1);
+      }
+    });
+
+    // INIT
+    loadHistory();
+  </script>
+
+  <style>
+    #quiz-app {
+      padding-top: 80px;
+      min-height: 100vh;
+    }
+
+    .hidden { display: none !important; }
+
+    .quiz-section { animation: fadeUp 0.4s ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .quiz-header {
+      text-align: center;
+      padding: 60px 0 40px;
+    }
+
+    .quiz-header .section-label { justify-content: center; }
+    .quiz-header .section-subtitle { margin: 0 auto; }
+
+    /* MODE CARDS */
+    .mode-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      max-width: 800px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+
+    .mode-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: var(--font-body);
+      color: var(--text);
+    }
+
+    .mode-card:hover, .mode-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      transform: translateY(-2px);
+    }
+
+    .mode-icon { font-size: 2rem; margin-bottom: 12px; }
+
+    .mode-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .mode-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .mode-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 4px 12px;
+    }
+
+    /* CHAPTER SELECT */
+    .chapter-select {
+      max-width: 600px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+      text-align: center;
+    }
+
+    .chapter-select h3 {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+
+    .chapter-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chapter-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 20px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: left;
+    }
+
+    .chapter-btn:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .q-count {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      margin-left: 12px;
+    }
+
+    /* HISTORY */
+    .history-section {
+      max-width: 600px;
+      margin: 0 auto 60px;
+      padding: 0 24px;
+    }
+
+    .history-section h3 {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+
+    .text-muted { color: var(--text-tertiary); font-size: 0.9rem; }
+
+    .history-best {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .history-best strong { color: var(--accent); font-size: 1.2rem; }
+
+    .history-item {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .hi-date { color: var(--text-tertiary); min-width: 90px; }
+    .hi-mode { color: var(--text-secondary); min-width: 60px; text-transform: capitalize; }
+    .hi-score { font-weight: 600; min-width: 40px; }
+    .hi-pass { color: var(--accent); }
+    .hi-fail { color: #ef4444; }
+    .hi-detail { color: var(--text-tertiary); }
+
+    /* QUIZ TOPBAR */
+    .quiz-topbar {
+      position: fixed;
+      top: 65px;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 24px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+
+    @media (min-width: 768px) {
+      .quiz-topbar { padding: 10px 48px; }
+    }
+
+    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .mode-label {
+      font-family: var(--font-heading);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .mode-label { display: inline; }
+    }
+
+    .progress-text {
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .timer-display {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .timer-display.warning { color: #ef4444; animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .timer-icon { font-size: 0.9rem; }
+
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all var(--transition);
+    }
+
+    .btn-icon:hover { border-color: var(--accent); color: var(--text); }
+    .btn-icon.flagged { border-color: #eab308; color: #eab308; background: rgba(234,179,8,0.1); }
+
+    .btn-small {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all var(--transition);
+    }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
+    }
+
+    .btn-danger:hover { background: rgba(239,68,68,0.3); }
+
+    /* PROGRESS BAR */
+    .progress-bar-container {
+      position: fixed;
+      top: calc(65px + 46px);
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--border);
+      z-index: 49;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    /* QUIZ BODY */
+    .quiz-body {
+      padding-top: 80px;
+      padding-bottom: 40px;
+      max-width: 760px;
+    }
+
+    .question-meta {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .q-chapter-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .q-difficulty-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      text-transform: capitalize;
+    }
+
+    .diff-easy { color: #22c55e; background: rgba(34,197,94,0.12); }
+    .diff-medium { color: #eab308; background: rgba(234,179,8,0.12); }
+    .diff-hard { color: #ef4444; background: rgba(239,68,68,0.12); }
+
+    .question-text {
+      font-family: var(--font-heading);
+      font-size: clamp(1.15rem, 2.5vw, 1.4rem);
+      font-weight: 600;
+      line-height: 1.5;
+      margin-bottom: 28px;
+      letter-spacing: -0.01em;
+    }
+
+    /* OPTIONS */
+    .options-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .option-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-align: left;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .option-btn:hover {
+      border-color: var(--text-tertiary);
+      background: var(--bg-elevated);
+    }
+
+    .option-btn.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .option-letter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      background: var(--border);
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+
+    .option-btn.selected .option-letter {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .option-text { padding-top: 3px; }
+
+    /* NAV BUTTONS */
+    .quiz-nav-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary, .btn-secondary, .btn-accent {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .btn-primary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-primary:hover { border-color: var(--accent); }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover { border-color: var(--text-tertiary); color: var(--text); }
+    .btn-secondary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-accent {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+    }
+
+    .btn-accent:hover { filter: brightness(1.1); }
+
+    /* NAV PANEL */
+    .nav-panel {
+      position: fixed;
+      top: calc(65px + 49px);
+      right: 0;
+      width: 300px;
+      max-height: calc(100vh - 120px);
+      background: var(--bg-elevated);
+      border-left: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      z-index: 48;
+      padding: 20px;
+      overflow-y: auto;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    .nav-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .nav-panel-header h3 {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+    }
+
+    .nav-panel-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .dot-answered { background: var(--accent); }
+    .dot-flagged { background: #eab308; }
+    .dot-current { background: var(--text); }
+    .dot-unanswered { background: var(--border-light); }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .nav-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-heading);
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .nav-cell:hover { border-color: var(--text-tertiary); }
+    .nav-cell.current { border-color: var(--text); color: var(--text); background: var(--bg-elevated); }
+    .nav-cell.answered { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .nav-cell.nav-flagged { box-shadow: inset 0 0 0 2px #eab308; }
+
+    /* RESULTS */
+    .results-wrapper {
+      text-align: center;
+      padding: 80px 0 40px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .results-badge {
+      display: inline-block;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 8px 24px;
+      border-radius: 24px;
+      margin-bottom: 16px;
+    }
+
+    .badge-pass { background: rgba(34,197,94,0.15); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-fail { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; }
+
+    .results-title {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 40px;
+    }
+
+    .results-score-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+
+    .score-circle {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .score-circle svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .score-bg {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 8;
+    }
+
+    .score-fill {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .score-value {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      text-align: center;
+    }
+
+    .stat { display: flex; flex-direction: column; gap: 4px; }
+
+    .stat-num {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* CHAPTER BREAKDOWN */
+    .chapter-breakdown {
+      text-align: left;
+      margin-bottom: 40px;
+    }
+
+    .chapter-breakdown h3 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+
+    .chapter-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .ch-name {
+      min-width: 200px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 600px) {
+      .ch-name { min-width: 0; flex: 1; font-size: 0.8rem; }
+    }
+
+    .ch-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .ch-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    .ch-score {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      min-width: 40px;
+      text-align: right;
+      font-size: 0.85rem;
+    }
+
+    .results-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* REVIEW */
+    .review-section {
+      padding-bottom: 60px;
+    }
+
+    .review-section h3 {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      margin-bottom: 24px;
+    }
+
+    .review-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+      text-align: left;
+      border-left: 4px solid var(--border);
+    }
+
+    .review-correct { border-left-color: var(--accent); }
+    .review-wrong { border-left-color: #ef4444; }
+
+    .review-q-head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .review-num {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .review-result { font-size: 0.8rem; font-weight: 600; }
+    .rr-correct { color: var(--accent); }
+    .rr-wrong { color: #ef4444; }
+
+    .review-q-text {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .review-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .review-opt {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--bg-elevated);
+      line-height: 1.4;
+    }
+
+    .review-opt-correct {
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.3);
+    }
+
+    .review-opt-wrong {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+
+    .review-opt .option-letter {
+      min-width: 26px;
+      height: 26px;
+      font-size: 0.8rem;
+    }
+
+    .review-explanation {
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .review-explanation strong {
+      color: var(--accent);
+    }
+
+    /* MOBILE */
+    @media (max-width: 600px) {
+      .quiz-topbar { padding: 8px 16px; gap: 8px; }
+      .quiz-body { padding-top: 70px; }
+      .nav-panel { width: 100%; border-left: none; }
+      .results-score-row { gap: 24px; }
+      .results-stats { gap: 12px; }
+      .chapter-row { flex-wrap: wrap; }
+    }
+  </style>
+</BaseLayout>
