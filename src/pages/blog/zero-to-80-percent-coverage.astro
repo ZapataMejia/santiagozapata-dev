@@ -1,0 +1,518 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const title = "From 0 to 80% Test Coverage in 3 Months: A Practical Guide";
+const date = "February 28, 2026";
+const readTime = "10 min read";
+---
+
+<BaseLayout title={`${title} — Santiago Zapata Mejía`} description="The exact framework, prioritization strategy, and automation patterns I used to achieve 80% E2E test coverage for LingoQuesto in record time.">
+  <article class="article">
+    <div class="article-container">
+      <a href="/blog" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to blog
+      </a>
+
+      <header class="article-header fade-in">
+        <div class="article-meta">
+          <span class="article-tag">Tutorial</span>
+          <span class="article-date">{date} · {readTime}</span>
+        </div>
+        <h1 class="article-title">{title}</h1>
+        <p class="article-subtitle">The exact framework, prioritization strategy, and automation patterns I used to achieve 80% E2E test coverage for LingoQuesto in record time.</p>
+      </header>
+
+      <div class="article-body fade-in">
+        <p>LingoQuesto is an EdTech platform — language learning through interactive quests. When I came on board, the product was growing fast. New features shipped weekly. And there were exactly zero automated tests.</p>
+
+        <p>The bugs were piling up. Inventory management for in-app items was breaking regularly. The checkout flow — their revenue engine — had intermittent failures that no one could reproduce. Login issues were generating 15+ support tickets per week. The team knew testing was important, but nobody had the bandwidth to start.</p>
+
+        <p>Three months later, we had 80% test coverage of all critical user flows, a CI pipeline that blocked broken code from shipping, and the support ticket volume for technical bugs had dropped by half. Here's how we did it.</p>
+
+        <h2>Weeks 1-2: Identifying What Matters</h2>
+
+        <p>The biggest mistake teams make when starting from zero is trying to test everything. You can't. And if you try, you'll burn out before you see results.</p>
+
+        <p>Instead, I started with a prioritization exercise. I sat down with the product manager, the lead developer, and the support team lead, and we answered one question: <strong>"If this breaks, what hurts the business most?"</strong></p>
+
+        <p>The answer gave us our priority matrix:</p>
+
+        <ul>
+          <li><strong>Tier 1 (Revenue-critical):</strong> Login/auth, checkout/payment flow, subscription management</li>
+          <li><strong>Tier 2 (Core experience):</strong> Quest completion, inventory management, leaderboard updates</li>
+          <li><strong>Tier 3 (Important but survivable):</strong> Profile settings, notification preferences, achievement display</li>
+          <li><strong>Tier 4 (Nice to have):</strong> Cosmetic features, marketing pages, admin analytics</li>
+        </ul>
+
+        <p>This wasn't just about severity — it was about test ROI. Tier 1 tests would catch the bugs that cost real money. Tier 4 tests would catch issues that users might not even notice. We committed to full coverage of Tiers 1 and 2 before touching anything else.</p>
+
+        <p>I also spent this time documenting every critical user flow as a step-by-step script. These manual test scripts became the blueprint for automation — and they were immediately useful to the team for manual regression testing while I built the framework.</p>
+
+        <h2>Weeks 3-4: Building the Foundation</h2>
+
+        <p>With priorities clear, I set up the automation framework. The stack: <strong>Playwright + TypeScript + Page Object Model</strong>. Same approach I've used at DailyBot and other projects, because it works.</p>
+
+        <p>The folder structure followed the business domain, not the technical architecture:</p>
+
+        <pre><code>tests/
+├── auth/
+│   ├── login.spec.ts
+│   ├── signup.spec.ts
+│   ├── password-reset.spec.ts
+│   └── session-management.spec.ts
+├── checkout/
+│   ├── add-to-cart.spec.ts
+│   ├── payment-flow.spec.ts
+│   ├── subscription-upgrade.spec.ts
+│   └── refund-request.spec.ts
+├── quests/
+│   ├── start-quest.spec.ts
+│   ├── complete-quest.spec.ts
+│   └── quest-rewards.spec.ts
+├── inventory/
+│   ├── view-items.spec.ts
+│   ├── use-item.spec.ts
+│   └── purchase-item.spec.ts
+├── pages/
+│   ├── LoginPage.ts
+│   ├── CheckoutPage.ts
+│   ├── QuestPage.ts
+│   └── InventoryPage.ts
+├── fixtures/
+│   ├── auth.ts
+│   ├── test-users.ts
+│   └── test-data.ts
+└── playwright.config.ts</code></pre>
+
+        <p>The configuration was optimized for speed and reliability from day one:</p>
+
+        <pre><code>// playwright.config.ts
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests',
+  timeout: 30_000,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 4 : undefined,
+  reporter: [
+    ['html', { open: 'never' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+  ],
+  use: {
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    screenshot: 'only-on-failure',
+    trace: 'on-first-retry',
+    video: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['iPhone 14'] },
+    },
+  ],
+});</code></pre>
+
+        <p>Key decisions that paid off later:</p>
+
+        <ul>
+          <li><strong>Retries only in CI.</strong> Locally, a flaky test should fail immediately so you fix it. In CI, a single retry catches genuine environment hiccups.</li>
+          <li><strong>Traces and video on first retry.</strong> When a test fails in CI, you get a full recording and trace file. No more "works on my machine" debates.</li>
+          <li><strong>Mobile project from day one.</strong> 60% of LingoQuesto's users were on mobile. Testing only desktop would miss their most common experience.</li>
+        </ul>
+
+        <p>By the end of week 4, we had 12 tests covering login, signup, and the basic checkout flow. Not a lot — but they were solid, fast (under 2 minutes total), and running on every PR.</p>
+
+        <h2>Month 2: Expanding Coverage Systematically</h2>
+
+        <p>With the foundation in place, month 2 was about volume. I followed a strict pattern for each new test area:</p>
+
+        <ol>
+          <li><strong>Write the Page Object first.</strong> Define the selectors, interactions, and common assertions for the page. This forces you to think about the page's API before writing test logic.</li>
+          <li><strong>Write the happy path test.</strong> User does the thing, thing works. This catches the most common regressions.</li>
+          <li><strong>Add error cases.</strong> Invalid input, missing data, unauthorized access. These catch the bugs that slip through because developers test with valid data.</li>
+          <li><strong>Add edge cases based on support tickets.</strong> Real-world bugs are better test cases than imagined ones. Every Tier 1/2 support ticket from the last 3 months became a test.</li>
+        </ol>
+
+        <p>Here's an example of what a complete checkout test looked like:</p>
+
+        <pre><code>// tests/checkout/payment-flow.spec.ts
+import { test, expect } from '../../fixtures/auth';
+import { CheckoutPage } from '../../pages/CheckoutPage';
+import { InventoryPage } from '../../pages/InventoryPage';
+
+test.describe('Payment Flow', () =&gt; {
+  test('should complete purchase with valid card', async ({
+    authenticatedPage: page,
+  }) =&gt; {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    const checkout = new CheckoutPage(page);
+    await checkout.proceedToCheckout();
+    await checkout.fillPaymentDetails({
+      cardNumber: '4242424242424242',
+      expiry: '12/28',
+      cvc: '123',
+    });
+    await checkout.confirmPurchase();
+
+    await expect(checkout.successMessage).toContainText('Purchase complete');
+    await expect(checkout.receiptEmail).toBeVisible();
+  });
+
+  test('should show error for declined card', async ({
+    authenticatedPage: page,
+  }) =&gt; {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    const checkout = new CheckoutPage(page);
+    await checkout.proceedToCheckout();
+    await checkout.fillPaymentDetails({
+      cardNumber: '4000000000000002', // Stripe test declined card
+      expiry: '12/28',
+      cvc: '123',
+    });
+    await checkout.confirmPurchase();
+
+    await expect(checkout.errorMessage).toContainText('declined');
+    await expect(checkout.retryButton).toBeVisible();
+  });
+
+  test('should preserve cart across page navigation', async ({
+    authenticatedPage: page,
+  }) =&gt; {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    await page.goto('/quests');
+    await page.goBack();
+
+    await expect(inventory.cartBadge).toContainText('1');
+  });
+});</code></pre>
+
+        <p>By the end of month 2, we had <strong>67 tests</strong> across auth, checkout, quests, and inventory. Coverage of Tier 1 flows was at 95%. Tier 2 was at 60%. Total execution time: 8 minutes in CI with 4 parallel workers.</p>
+
+        <h2>Month 3: CI/CD, Reporting, and Team Onboarding</h2>
+
+        <p>The final month was about making the test suite a permanent part of the development workflow — not just something the QA engineer runs.</p>
+
+        <p><strong>CI/CD integration:</strong> We set up two pipeline stages. A fast "smoke" run (~3 minutes) on every PR that covers auth and checkout. A full regression run (~12 minutes) on merges to the staging branch. Both had to pass before production deploys.</p>
+
+        <p><strong>Reporting:</strong> Playwright's HTML report is good, but the team needed more visibility. I set up a simple dashboard that tracked four metrics over time:</p>
+
+        <ul>
+          <li><strong>Test coverage %</strong> — how many critical flows are automated (our target: 80%)</li>
+          <li><strong>Pass rate</strong> — percentage of tests passing per run (target: >98%)</li>
+          <li><strong>Execution time</strong> — how long the suite takes (target: <15 min for full, <5 min for smoke)</li>
+          <li><strong>Defect escape rate</strong> — how many bugs reach production that tests should have caught (target: <5%)</li>
+        </ul>
+
+        <p><strong>Team onboarding:</strong> I ran two 1-hour workshops for the development team. The first covered how to read test failures and use Playwright's trace viewer. The second covered how to write a test — not because developers should write all the tests, but because they should be able to add a test when fixing a bug.</p>
+
+        <p>I also created a <code>TESTING.md</code> guide in the repo root with:</p>
+
+        <ul>
+          <li>How to run tests locally (<code>npm run test:e2e</code>)</li>
+          <li>How to run a single test file (<code>npx playwright test tests/auth/login.spec.ts</code>)</li>
+          <li>How to debug a failing test (<code>npx playwright test --debug</code>)</li>
+          <li>How to add a new Page Object</li>
+          <li>Naming conventions and folder structure guide</li>
+        </ul>
+
+        <h2>The 80/20 Rule of Test Coverage</h2>
+
+        <p>We hit 80% coverage of critical flows by the end of month 3. But let me be clear about what that means — and what it doesn't.</p>
+
+        <p>80% doesn't mean we automated 80% of every possible interaction. It means we automated the 80% of user journeys that generate 95% of the business value. The remaining 20% — edge cases in admin tools, rarely used settings pages, cosmetic interactions — stays manual. And that's fine.</p>
+
+        <p><strong>What to automate:</strong></p>
+        <ul>
+          <li>Revenue-generating flows (checkout, subscriptions, upgrades)</li>
+          <li>Authentication and authorization</li>
+          <li>Core user journeys (the thing your product actually does)</li>
+          <li>Data integrity flows (anything that writes to the database)</li>
+          <li>Previously broken things (every production bug becomes a test)</li>
+        </ul>
+
+        <p><strong>What to leave manual:</strong></p>
+        <ul>
+          <li>Highly visual or subjective things (does this animation feel smooth?)</li>
+          <li>Rarely used admin features</li>
+          <li>One-off marketing pages</li>
+          <li>Exploratory edge cases that change frequently</li>
+        </ul>
+
+        <h2>Final Metrics</h2>
+
+        <p>By the end of the three months:</p>
+
+        <ul>
+          <li><strong>87 automated tests</strong> covering auth, checkout, quests, inventory, and API endpoints</li>
+          <li><strong>80% critical flow coverage</strong> (Tier 1: 95%, Tier 2: 75%)</li>
+          <li><strong>Full suite execution: 12 minutes.</strong> Smoke suite: 3 minutes.</li>
+          <li><strong>Defect escape rate dropped from ~18% to ~4%.</strong></li>
+          <li><strong>Support tickets for technical bugs dropped 50%</strong></li>
+          <li><strong>3 developers</strong> actively contributing tests (up from zero)</li>
+        </ul>
+
+        <h2>Practical Tips for QA Leads Starting from Zero</h2>
+
+        <p><strong>Get executive buy-in with numbers, not feelings.</strong> Before I started, I calculated the cost of bugs: support time, developer time to hotfix, lost revenue from checkout failures. That made the case for investing in automation undeniable.</p>
+
+        <p><strong>Ship your first test in week 1.</strong> Don't spend three weeks setting up the perfect framework. Get a login test running in CI within the first five days. Early wins create momentum and credibility.</p>
+
+        <p><strong>Use the support queue as your test backlog.</strong> Every production bug is a test you should have had. Working backwards from real failures is the fastest way to build a suite that catches real problems.</p>
+
+        <p><strong>Make tests easy to run locally.</strong> If a developer has to configure three environment variables, install Docker, and sacrifice a goat to run tests locally, they won't run them. One command. That's the bar.</p>
+
+        <p><strong>Celebrate the metrics.</strong> Share the dashboard. When defect escape rate drops, tell the team. When the suite catches a bug that would have shipped, post it in Slack. Visibility creates culture change.</p>
+
+        <p><strong>Don't chase 100%.</strong> 80% coverage of the right things beats 100% coverage that takes 45 minutes to run and has 10 flaky tests. The goal isn't a number — it's confidence that the important stuff works.</p>
+
+        <p>Starting from zero is daunting. But it's also an incredible opportunity. You get to design the system right, without legacy baggage. Take it one tier at a time, ship tests early, and let the results compound.</p>
+      </div>
+
+      <div class="article-author fade-in">
+        <div class="author-info">
+          <div class="author-avatar">SZ</div>
+          <div>
+            <p class="author-name">Santiago Zapata Mejía</p>
+            <p class="author-role">QA Automation Lead · Building quality programs for startups</p>
+          </div>
+        </div>
+      </div>
+
+      <a href="/blog" class="back-link back-link-bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    padding: 120px 0 80px;
+  }
+
+  .article-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    transition: color var(--transition);
+    margin-bottom: 48px;
+  }
+
+  .back-link:hover {
+    color: var(--accent);
+  }
+
+  .back-link-bottom {
+    margin-bottom: 0;
+    margin-top: 48px;
+  }
+
+  .article-header {
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .article-tag {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    background: var(--accent-dim);
+  }
+
+  .article-date {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+  }
+
+  .article-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  .article-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  .article-body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .article-body p {
+    margin-bottom: 1.5em;
+  }
+
+  .article-body h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2.5em;
+    margin-bottom: 0.8em;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body h3 {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2em;
+    margin-bottom: 0.6em;
+  }
+
+  .article-body ul,
+  .article-body ol {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+  }
+
+  .article-body li {
+    margin-bottom: 0.6em;
+    line-height: 1.7;
+  }
+
+  .article-body strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .article-body code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+
+  .article-body pre {
+    margin-bottom: 1.8em;
+    border-radius: 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+  }
+
+  .article-body pre code {
+    display: block;
+    padding: 24px;
+    background: none;
+    border: none;
+    color: #c9d1d9;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .article-author {
+    margin-top: 64px;
+    padding: 32px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .author-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .author-role {
+    font-size: 0.88rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 767px) {
+    .article {
+      padding: 100px 0 60px;
+    }
+
+    .article-body pre code {
+      font-size: 0.78rem;
+      padding: 16px;
+    }
+
+    .article-author {
+      padding: 24px;
+    }
+
+    .author-info {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>
