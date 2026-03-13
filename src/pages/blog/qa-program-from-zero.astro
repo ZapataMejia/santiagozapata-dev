@@ -4,6 +4,114 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 const title = "How I Built a QA Program from Zero for a Y Combinator Startup";
 const date = "March 10, 2026";
 const readTime = "8 min read";
+
+const esc = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const codeLoginPage = esc(`// pages/LoginPage.ts
+import { type Page, type Locator } from '@playwright/test';
+
+export class LoginPage {
+  private readonly emailInput: Locator;
+  private readonly passwordInput: Locator;
+  private readonly submitButton: Locator;
+
+  constructor(private page: Page) {
+    this.emailInput = page.locator('[data-testid="email-input"]');
+    this.passwordInput = page.locator('[data-testid="password-input"]');
+    this.submitButton = page.locator('[data-testid="login-submit"]');
+  }
+
+  async login(email: string, password: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitButton.click();
+    await this.page.waitForURL('**/dashboard');
+  }
+}`);
+
+const codeFolderStructure = esc(`tests/
+├── e2e/
+│   ├── onboarding/
+│   │   ├── signup.spec.ts
+│   │   └── team-setup.spec.ts
+│   ├── check-ins/
+│   │   ├── daily-checkin.spec.ts
+│   │   └── async-responses.spec.ts
+│   ├── integrations/
+│   │   ├── slack-connect.spec.ts
+│   │   └── teams-connect.spec.ts
+│   └── billing/
+│       ├── upgrade-plan.spec.ts
+│       └── cancel-subscription.spec.ts
+├── pages/
+│   ├── LoginPage.ts
+│   ├── DashboardPage.ts
+│   ├── CheckInPage.ts
+│   └── BillingPage.ts
+├── fixtures/
+│   ├── auth.fixture.ts
+│   └── test-data.fixture.ts
+└── playwright.config.ts`);
+
+const codeAuthFixture = esc(`// fixtures/auth.fixture.ts
+import { test as base } from '@playwright/test';
+
+type AuthFixtures = {
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<AuthFixtures>({
+  authenticatedPage: async ({ browser }, use) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    const response = await page.request.post('/api/auth/login', {
+      data: {
+        email: process.env.TEST_USER_EMAIL,
+        password: process.env.TEST_USER_PASSWORD,
+      },
+    });
+
+    const cookies = response.headers()['set-cookie'];
+    await context.addCookies(parseCookies(cookies));
+    await use(page);
+    await context.close();
+  },
+});`);
+
+const codeGhActions = esc(`# .github/workflows/e2e-tests.yml
+name: E2E Tests
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run critical path tests
+        run: npx playwright test --grep @critical
+        env:
+          BASE_URL: \${{ secrets.STAGING_URL }}
+          TEST_USER_EMAIL: \${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: \${{ secrets.TEST_USER_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results
+          path: test-results/`);
 ---
 
 <BaseLayout title={`${title} — Santiago Zapata Mejía`} description="A deep dive into building test automation infrastructure, defining quality processes, and creating a culture of quality from the ground up at DailyBot (YC W19).">
@@ -56,85 +164,19 @@ const readTime = "8 min read";
 
         <p>For architecture, I chose the <strong>Page Object Model (POM)</strong>. In a fast-moving codebase, UI changes constantly. POM isolates selectors and page interactions into dedicated classes, so when the UI changes, you update one file — not fifty tests.</p>
 
-        <pre><code>// pages/LoginPage.ts
-import { type Page, type Locator } from '@playwright/test';
-
-export class LoginPage {
-  private readonly emailInput: Locator;
-  private readonly passwordInput: Locator;
-  private readonly submitButton: Locator;
-
-  constructor(private page: Page) {
-    this.emailInput = page.locator('[data-testid="email-input"]');
-    this.passwordInput = page.locator('[data-testid="password-input"]');
-    this.submitButton = page.locator('[data-testid="login-submit"]');
-  }
-
-  async login(email: string, password: string) {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
-    await this.submitButton.click();
-    await this.page.waitForURL('**/dashboard');
-  }
-}</code></pre>
+        <pre><code set:html={codeLoginPage}></code></pre>
 
         <h2>Building the Framework: Structure That Scales</h2>
 
         <p>I designed the folder structure to be immediately understandable for any developer joining the team. Discoverability matters more than cleverness:</p>
 
-        <pre><code>tests/
-├── e2e/
-│   ├── onboarding/
-│   │   ├── signup.spec.ts
-│   │   └── team-setup.spec.ts
-│   ├── check-ins/
-│   │   ├── daily-checkin.spec.ts
-│   │   └── async-responses.spec.ts
-│   ├── integrations/
-│   │   ├── slack-connect.spec.ts
-│   │   └── teams-connect.spec.ts
-│   └── billing/
-│       ├── upgrade-plan.spec.ts
-│       └── cancel-subscription.spec.ts
-├── pages/
-│   ├── LoginPage.ts
-│   ├── DashboardPage.ts
-│   ├── CheckInPage.ts
-│   └── BillingPage.ts
-├── fixtures/
-│   ├── auth.fixture.ts
-│   └── test-data.fixture.ts
-└── playwright.config.ts</code></pre>
+        <pre><code set:html={codeFolderStructure}></code></pre>
 
         <p>Two patterns made a huge difference for test stability and speed:</p>
 
         <p><strong>Custom fixtures for authentication.</strong> Instead of logging in through the UI for every single test, I created a fixture that authenticates via the API and injects the session cookie. This alone shaved 40+ seconds off each test run.</p>
 
-        <pre><code>// fixtures/auth.fixture.ts
-import { test as base } from '@playwright/test';
-
-type AuthFixtures = {
-  authenticatedPage: Page;
-};
-
-export const test = base.extend&lt;AuthFixtures&gt;({
-  authenticatedPage: async ({ browser }, use) =&gt; {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    const response = await page.request.post('/api/auth/login', {
-      data: {
-        email: process.env.TEST_USER_EMAIL,
-        password: process.env.TEST_USER_PASSWORD,
-      },
-    });
-
-    const cookies = response.headers()['set-cookie'];
-    await context.addCookies(parseCookies(cookies));
-    await use(page);
-    await context.close();
-  },
-});</code></pre>
+        <pre><code set:html={codeAuthFixture}></code></pre>
 
         <p><strong>Environment-agnostic test data.</strong> Tests generate their own data through API calls in <code>beforeEach</code> hooks, and clean up in <code>afterEach</code>. No shared test accounts, no mysterious failures because someone else's test run corrupted the state.</p>
 
@@ -144,39 +186,7 @@ export const test = base.extend&lt;AuthFixtures&gt;({
 
         <p><strong>GitHub Actions for PR checks.</strong> Every pull request triggers a subset of critical path tests (login, core check-in flow, billing). This runs in ~4 minutes and gives developers fast feedback.</p>
 
-        <pre><code># .github/workflows/e2e-tests.yml
-name: E2E Tests
-on:
-  pull_request:
-    branches: [main, develop]
-
-jobs:
-  e2e:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run critical path tests
-        run: npx playwright test --grep @critical
-        env:
-          BASE_URL: ${{ secrets.STAGING_URL }}
-          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-results
-          path: test-results/</code></pre>
+        <pre><code set:html={codeGhActions}></code></pre>
 
         <p><strong>Jenkins for full regression suites.</strong> The complete suite (all browsers, all flows) runs nightly and on the staging branch before production deploys. If any test fails, the deploy is blocked automatically.</p>
 

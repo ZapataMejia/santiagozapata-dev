@@ -4,6 +4,128 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 const title = "From 0 to 80% Test Coverage in 3 Months: A Practical Guide";
 const date = "February 28, 2026";
 const readTime = "10 min read";
+
+const esc = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const codeFolderStructure = esc(`tests/
+├── auth/
+│   ├── login.spec.ts
+│   ├── signup.spec.ts
+│   ├── password-reset.spec.ts
+│   └── session-management.spec.ts
+├── checkout/
+│   ├── add-to-cart.spec.ts
+│   ├── payment-flow.spec.ts
+│   ├── subscription-upgrade.spec.ts
+│   └── refund-request.spec.ts
+├── quests/
+│   ├── start-quest.spec.ts
+│   ├── complete-quest.spec.ts
+│   └── quest-rewards.spec.ts
+├── inventory/
+│   ├── view-items.spec.ts
+│   ├── use-item.spec.ts
+│   └── purchase-item.spec.ts
+├── pages/
+│   ├── LoginPage.ts
+│   ├── CheckoutPage.ts
+│   ├── QuestPage.ts
+│   └── InventoryPage.ts
+├── fixtures/
+│   ├── auth.ts
+│   ├── test-users.ts
+│   └── test-data.ts
+└── playwright.config.ts`);
+
+const codePlaywrightConfig = esc(`// playwright.config.ts
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests',
+  timeout: 30_000,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 4 : undefined,
+  reporter: [
+    ['html', { open: 'never' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+  ],
+  use: {
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    screenshot: 'only-on-failure',
+    trace: 'on-first-retry',
+    video: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['iPhone 14'] },
+    },
+  ],
+});`);
+
+const codePaymentFlow = esc(`// tests/checkout/payment-flow.spec.ts
+import { test, expect } from '../../fixtures/auth';
+import { CheckoutPage } from '../../pages/CheckoutPage';
+import { InventoryPage } from '../../pages/InventoryPage';
+
+test.describe('Payment Flow', () => {
+  test('should complete purchase with valid card', async ({
+    authenticatedPage: page,
+  }) => {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    const checkout = new CheckoutPage(page);
+    await checkout.proceedToCheckout();
+    await checkout.fillPaymentDetails({
+      cardNumber: '4242424242424242',
+      expiry: '12/28',
+      cvc: '123',
+    });
+    await checkout.confirmPurchase();
+
+    await expect(checkout.successMessage).toContainText('Purchase complete');
+    await expect(checkout.receiptEmail).toBeVisible();
+  });
+
+  test('should show error for declined card', async ({
+    authenticatedPage: page,
+  }) => {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    const checkout = new CheckoutPage(page);
+    await checkout.proceedToCheckout();
+    await checkout.fillPaymentDetails({
+      cardNumber: '4000000000000002', // Stripe test declined card
+      expiry: '12/28',
+      cvc: '123',
+    });
+    await checkout.confirmPurchase();
+
+    await expect(checkout.errorMessage).toContainText('declined');
+    await expect(checkout.retryButton).toBeVisible();
+  });
+
+  test('should preserve cart across page navigation', async ({
+    authenticatedPage: page,
+  }) => {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    await page.goto('/quests');
+    await page.goBack();
+
+    await expect(inventory.cartBadge).toContainText('1');
+  });
+});`);
 ---
 
 <BaseLayout title={`${title} — Santiago Zapata Mejía`} description="The exact framework, prioritization strategy, and automation patterns I used to achieve 80% E2E test coverage for LingoQuesto in record time.">
@@ -55,67 +177,11 @@ const readTime = "10 min read";
 
         <p>The folder structure followed the business domain, not the technical architecture:</p>
 
-        <pre><code>tests/
-├── auth/
-│   ├── login.spec.ts
-│   ├── signup.spec.ts
-│   ├── password-reset.spec.ts
-│   └── session-management.spec.ts
-├── checkout/
-│   ├── add-to-cart.spec.ts
-│   ├── payment-flow.spec.ts
-│   ├── subscription-upgrade.spec.ts
-│   └── refund-request.spec.ts
-├── quests/
-│   ├── start-quest.spec.ts
-│   ├── complete-quest.spec.ts
-│   └── quest-rewards.spec.ts
-├── inventory/
-│   ├── view-items.spec.ts
-│   ├── use-item.spec.ts
-│   └── purchase-item.spec.ts
-├── pages/
-│   ├── LoginPage.ts
-│   ├── CheckoutPage.ts
-│   ├── QuestPage.ts
-│   └── InventoryPage.ts
-├── fixtures/
-│   ├── auth.ts
-│   ├── test-users.ts
-│   └── test-data.ts
-└── playwright.config.ts</code></pre>
+        <pre><code set:html={codeFolderStructure}></code></pre>
 
         <p>The configuration was optimized for speed and reliability from day one:</p>
 
-        <pre><code>// playwright.config.ts
-import { defineConfig, devices } from '@playwright/test';
-
-export default defineConfig({
-  testDir: './tests',
-  timeout: 30_000,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 4 : undefined,
-  reporter: [
-    ['html', { open: 'never' }],
-    ['json', { outputFile: 'test-results/results.json' }],
-  ],
-  use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
-    screenshot: 'only-on-failure',
-    trace: 'on-first-retry',
-    video: 'on-first-retry',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'mobile',
-      use: { ...devices['iPhone 14'] },
-    },
-  ],
-});</code></pre>
+        <pre><code set:html={codePlaywrightConfig}></code></pre>
 
         <p>Key decisions that paid off later:</p>
 
@@ -140,65 +206,7 @@ export default defineConfig({
 
         <p>Here's an example of what a complete checkout test looked like:</p>
 
-        <pre><code>// tests/checkout/payment-flow.spec.ts
-import { test, expect } from '../../fixtures/auth';
-import { CheckoutPage } from '../../pages/CheckoutPage';
-import { InventoryPage } from '../../pages/InventoryPage';
-
-test.describe('Payment Flow', () =&gt; {
-  test('should complete purchase with valid card', async ({
-    authenticatedPage: page,
-  }) =&gt; {
-    const inventory = new InventoryPage(page);
-    await inventory.navigate();
-    await inventory.addItemToCart('Power Boost Pack');
-
-    const checkout = new CheckoutPage(page);
-    await checkout.proceedToCheckout();
-    await checkout.fillPaymentDetails({
-      cardNumber: '4242424242424242',
-      expiry: '12/28',
-      cvc: '123',
-    });
-    await checkout.confirmPurchase();
-
-    await expect(checkout.successMessage).toContainText('Purchase complete');
-    await expect(checkout.receiptEmail).toBeVisible();
-  });
-
-  test('should show error for declined card', async ({
-    authenticatedPage: page,
-  }) =&gt; {
-    const inventory = new InventoryPage(page);
-    await inventory.navigate();
-    await inventory.addItemToCart('Power Boost Pack');
-
-    const checkout = new CheckoutPage(page);
-    await checkout.proceedToCheckout();
-    await checkout.fillPaymentDetails({
-      cardNumber: '4000000000000002', // Stripe test declined card
-      expiry: '12/28',
-      cvc: '123',
-    });
-    await checkout.confirmPurchase();
-
-    await expect(checkout.errorMessage).toContainText('declined');
-    await expect(checkout.retryButton).toBeVisible();
-  });
-
-  test('should preserve cart across page navigation', async ({
-    authenticatedPage: page,
-  }) =&gt; {
-    const inventory = new InventoryPage(page);
-    await inventory.navigate();
-    await inventory.addItemToCart('Power Boost Pack');
-
-    await page.goto('/quests');
-    await page.goBack();
-
-    await expect(inventory.cartBadge).toContainText('1');
-  });
-});</code></pre>
+        <pre><code set:html={codePaymentFlow}></code></pre>
 
         <p>By the end of month 2, we had <strong>67 tests</strong> across auth, checkout, quests, and inventory. Coverage of Tier 1 flows was at 95%. Tier 2 was at 60%. Total execution time: 8 minutes in CI with 4 parallel workers.</p>
 
@@ -213,8 +221,8 @@ test.describe('Payment Flow', () =&gt; {
         <ul>
           <li><strong>Test coverage %</strong> — how many critical flows are automated (our target: 80%)</li>
           <li><strong>Pass rate</strong> — percentage of tests passing per run (target: >98%)</li>
-          <li><strong>Execution time</strong> — how long the suite takes (target: <15 min for full, <5 min for smoke)</li>
-          <li><strong>Defect escape rate</strong> — how many bugs reach production that tests should have caught (target: <5%)</li>
+          <li><strong>Execution time</strong> — how long the suite takes (target: under 15 min for full, under 5 min for smoke)</li>
+          <li><strong>Defect escape rate</strong> — how many bugs reach production that tests should have caught (target: under 5%)</li>
         </ul>
 
         <p><strong>Team onboarding:</strong> I ran two 1-hour workshops for the development team. The first covered how to read test failures and use Playwright's trace viewer. The second covered how to write a test — not because developers should write all the tests, but because they should be able to add a test when fixing a bug.</p>
