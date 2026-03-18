@@ -30,6 +30,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
         <a href="#contact" class="btn btn-secondary">Get In Touch</a>
+        <div class="cv-dropdown">
+          <button class="btn btn-cv" aria-expanded="false" aria-haspopup="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12v1.5h10V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download CV
+            <svg class="cv-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="cv-dropdown-menu">
+            <a href="/Santiago_Zapata_QA_CV_EN.pdf" download>
+              <span>English</span>
+              <span class="cv-lang-tag">EN</span>
+            </a>
+            <a href="/Santiago_Zapata_QA_CV_ES.pdf" download>
+              <span>Español</span>
+              <span class="cv-lang-tag">ES</span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -340,6 +357,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <span class="contact-link-value">linkedin.com/in/zapatamejia</span>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 15L15 5M15 5H8M15 5v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
+          <a href="/Santiago_Zapata_QA_CV_EN.pdf" download class="contact-link">
+            <span class="contact-link-label">CV</span>
+            <span class="contact-link-value">Download Resume (EN / ES)</span>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 15v2h12v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
         </div>
       </div>
     </div>
@@ -488,6 +510,86 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: var(--text-tertiary);
     background: var(--bg-elevated);
     transform: translateY(-2px);
+  }
+
+  /* ====== CV DROPDOWN ====== */
+  .cv-dropdown {
+    position: relative;
+  }
+
+  .btn-cv {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-light);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-cv:hover {
+    border-color: var(--text-tertiary);
+    background: var(--bg-elevated);
+    transform: translateY(-2px);
+  }
+
+  .cv-chevron {
+    transition: transform var(--transition);
+  }
+
+  .cv-dropdown.open .cv-chevron {
+    transform: rotate(180deg);
+  }
+
+  .cv-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 180px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all var(--transition);
+    z-index: 10;
+  }
+
+  .cv-dropdown.open .cv-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .cv-dropdown-menu a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: all var(--transition);
+  }
+
+  .cv-dropdown-menu a:hover {
+    background: var(--bg-card);
+    color: var(--text);
+  }
+
+  .cv-dropdown-menu a + a {
+    border-top: 1px solid var(--border);
+  }
+
+  .cv-lang-tag {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--accent-dim);
+    color: var(--accent);
   }
 
   /* ====== METRICS ====== */

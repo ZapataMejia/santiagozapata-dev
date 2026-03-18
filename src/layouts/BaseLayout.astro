@@ -82,6 +82,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             <a href="https://github.com/ZapataMejia" target="_blank" rel="noopener noreferrer">GitHub</a>
             <a href="https://linkedin.com/in/zapatamejia" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             <a href="mailto:szapatamejia193@gmail.com">Email</a>
+            <a href="/Santiago_Zapata_QA_CV_EN.pdf" download>Resume</a>
           </div>
         </div>
         <div class="footer-bottom">
@@ -132,6 +133,20 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           }
         });
       }, 100);
+
+      const cvDropdown = document.querySelector('.cv-dropdown');
+      const cvBtn = cvDropdown?.querySelector('.btn-cv');
+
+      cvBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        cvDropdown?.classList.toggle('open');
+        cvBtn.setAttribute('aria-expanded', cvDropdown?.classList.contains('open') ? 'true' : 'false');
+      });
+
+      document.addEventListener('click', () => {
+        cvDropdown?.classList.remove('open');
+        cvBtn?.setAttribute('aria-expanded', 'false');
+      });
     </script>
   </body>
 </html>
