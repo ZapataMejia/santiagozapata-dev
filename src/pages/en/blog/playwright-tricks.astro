@@ -1,0 +1,163 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { snippetStep, snippetRoute, snippetToPass } from '../../../content/snippets/playwright-tricks-en';
+
+const title = '5 Playwright Tricks That Saved Me Hours';
+const date = 'March 25, 2026';
+const readTime = '6 min read';
+
+const stepHeading = '1. test.step() for readable reports';
+const routeHeading = '2. page.route() to mock APIs';
+const toPassHeading = '3. expect().toPass() with retries';
+const lastFailedHeading = '4. The --last-failed flag';
+const traceHeading = '5. Trace viewer over screenshots alone';
+
+const traceOptTok = "trace: 'on-first-retry'";
+const parallelConfigureTok = "test.describe.configure({ mode: 'parallel' })";
+---
+
+<BaseLayout
+  locale="en"
+  title={`${title} — Santiago Zapata Mejía`}
+  description="Five practical Playwright patterns: test.step, route mocking, toPass, --last-failed, and the trace viewer."
+>
+  <article class="article">
+    <div class="article-container">
+      <a href="/en/blog" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to blog
+      </a>
+
+      <header class="article-header fade-in">
+        <div class="article-meta">
+          <span class="article-tag">Playwright</span>
+          <span class="article-date">{date} · {readTime}</span>
+        </div>
+        <h1 class="article-title">{title}</h1>
+        <p class="article-subtitle">
+          I've used Playwright daily for years. These five tricks saved me more hours than I'd like to admit — and you can drop them into your suite today.
+        </p>
+      </header>
+
+      <div class="article-body fade-in">
+        <p>
+          For a production-ready layout with POM, fixtures, and CI, see my open source framework:
+          <a href="https://github.com/ZapataMejia/playwright-automation-framework" target="_blank" rel="noopener noreferrer">playwright-automation-framework</a>.
+        </p>
+
+        <h2>{stepHeading}</h2>
+        <p>
+          Wrap logical blocks in named steps. When a test fails at 2am, the report tells you which phase broke — not just a generic stack line.
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetStep}</span></pre>
+
+        <h2>{routeHeading}</h2>
+        <p>
+          Stop depending on flaky staging. Intercept the URL, return stable JSON, and focus on the UI flow.
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetRoute}</span></pre>
+
+        <h2>{toPassHeading}</h2>
+        <p>
+          Instead of brittle <span class="tok">waitForTimeout</span> hacks, let Playwright retry the assertion until it passes or times out. Cleaner and more stable.
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetToPass}</span></pre>
+
+        <h2>{lastFailedHeading}</h2>
+        <p>
+          Re-run only what broke. On a 400+ test suite, this alone cut my debug time in half.
+        </p>
+
+        <h2>{traceHeading}</h2>
+        <p>
+          Screenshots are 2015. The trace gives you the full timeline: network, DOM snapshots, console, and actions. Use <span class="tok">{traceOptTok}</span> or <span class="tok">retain-on-failure</span> in CI and open the artifact in the local viewer.
+        </p>
+
+        <p>
+          <strong>Bonus:</strong> combine <span class="tok">{parallelConfigureTok}</span> with sharding in CI and watch a 20-minute pipeline drop toward five minutes on large projects.
+        </p>
+
+        <div class="article-author">
+          <div class="author-info">
+            <div class="author-avatar">SZ</div>
+            <div>
+              <div class="author-name">Santiago Zapata Mejía</div>
+              <div class="author-role">QA Automation Lead · Speaker at QAConf Eje Cafetero</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="/en/blog" class="back-link back-link-bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article { padding: 120px 0 80px; }
+  .article-container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-heading); font-size: 0.88rem; font-weight: 500;
+    color: var(--text-tertiary); transition: color var(--transition); margin-bottom: 48px;
+  }
+  .back-link:hover { color: var(--accent); }
+  .back-link-bottom { margin-bottom: 0; margin-top: 48px; }
+  .article-header { margin-bottom: 48px; padding-bottom: 40px; border-bottom: 1px solid var(--border); }
+  .article-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .article-tag {
+    font-family: var(--font-heading); font-size: 0.75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent);
+    padding: 4px 12px; border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25); background: var(--accent-dim);
+  }
+  .article-date { font-size: 0.85rem; color: var(--text-tertiary); }
+  .article-title {
+    font-family: var(--font-heading); font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 20px;
+  }
+  .article-subtitle { color: var(--text-secondary); font-size: 1.1rem; line-height: 1.7; }
+  .article-body { font-size: 1.05rem; line-height: 1.8; color: var(--text-secondary); }
+  .article-body p { margin-bottom: 1.5em; }
+  .article-body h2 {
+    font-family: var(--font-heading); font-size: 1.5rem; font-weight: 600;
+    color: var(--text); margin-top: 2.5em; margin-bottom: 0.8em; letter-spacing: -0.01em;
+  }
+  .article-body strong { color: var(--text); font-weight: 600; }
+  .article-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .article-body .tok {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.88em;
+    background: var(--bg-elevated); padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--border); color: var(--accent);
+  }
+  .article-body pre.mono-block {
+    margin-bottom: 1.8em; border-radius: 12px; overflow-x: auto;
+    border: 1px solid var(--border); background: #0d0d0d;
+  }
+  .article-body pre.mono-block .mono-inner {
+    display: block; padding: 24px; background: none; border: none;
+    color: #c9d1d9; font-size: 0.85rem; line-height: 1.7; white-space: pre; overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .article-author {
+    margin-top: 64px; padding: 32px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg-elevated);
+  }
+  .author-info { display: flex; align-items: center; gap: 16px; }
+  .author-avatar {
+    width: 48px; height: 48px; border-radius: 50%; background: var(--accent-dim);
+    color: var(--accent); display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-heading); font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .author-name { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; color: var(--text); }
+  .author-role { font-size: 0.88rem; color: var(--text-tertiary); margin-top: 2px; }
+  @media (max-width: 767px) {
+    .article { padding: 100px 0 60px; }
+    .article-body pre.mono-block .mono-inner { font-size: 0.78rem; padding: 16px; }
+    .article-author { padding: 24px; }
+    .author-info { flex-direction: column; text-align: center; }
+  }
+</style>

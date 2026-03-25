@@ -1,0 +1,213 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import type { Locale } from '../../i18n';
+import { messages } from '../../i18n';
+import { blogPosts, postHref } from '../../i18n/blog-posts';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const B = messages[locale].blogIndex;
+---
+
+<BaseLayout locale={locale} title={B.title} description={B.description}>
+  <section class="blog-hero">
+    <div class="container">
+      <div class="blog-hero-content fade-in">
+        <span class="section-label">{B.label}</span>
+        <h1 class="blog-title">{B.heading}<br />{B.headingBr}</h1>
+        <p class="blog-subtitle">{B.subtitle}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="blog-posts">
+    <div class="container">
+      <div class="posts-grid">
+        {blogPosts.map((post) => {
+          const href = postHref(locale, post.slug, post.bodyLocale);
+          const showAlt = post.bodyLocale !== locale;
+          const altLabel = post.bodyLocale === 'en' ? B.articleInEnglish : B.articleInSpanish;
+          return (
+            <a href={href} class="post-card fade-in" hreflang={post.bodyLocale}>
+              <div class="post-card-top">
+                <span class="post-tag">{post.tag[locale]}</span>
+                <span class="post-meta">
+                  {post.date[locale]} · {post.readTime[locale]}
+                  {showAlt && <span class="post-lang-hint">{altLabel}</span>}
+                </span>
+              </div>
+              <h2 class="post-title">{post.title[locale]}</h2>
+              <p class="post-excerpt">{post.excerpt[locale]}</p>
+              <span class="post-read-more">
+                {B.readArticle}
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </a>
+          );
+        })}
+      </div>
+
+      <div class="blog-cta fade-in">
+        <p>{B.cta}</p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .blog-hero {
+    padding: 160px 0 80px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .blog-title {
+    font-family: var(--font-heading);
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  .blog-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 550px;
+    line-height: 1.7;
+  }
+
+  .blog-posts {
+    padding: 80px 0 120px;
+  }
+
+  .posts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 64px;
+  }
+
+  .post-card {
+    display: block;
+    padding: 40px 36px;
+    background: var(--bg);
+    transition: all var(--transition);
+  }
+
+  .post-card:hover {
+    background: var(--bg-elevated);
+  }
+
+  .post-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .post-tag {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    background: var(--accent-dim);
+  }
+
+  .post-meta {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .post-lang-hint {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .post-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    line-height: 1.3;
+    transition: color var(--transition);
+  }
+
+  .post-card:hover .post-title {
+    color: var(--accent);
+  }
+
+  .post-excerpt {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    margin-bottom: 20px;
+    max-width: 700px;
+  }
+
+  .post-read-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    transition: all var(--transition);
+  }
+
+  .post-card:hover .post-read-more {
+    color: var(--accent);
+  }
+
+  .post-read-more svg {
+    transition: transform var(--transition);
+  }
+
+  .post-card:hover .post-read-more svg {
+    transform: translateX(4px);
+  }
+
+  .blog-cta {
+    text-align: center;
+  }
+
+  .blog-cta p {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 767px) {
+    .blog-hero {
+      padding: 130px 0 60px;
+    }
+
+    .post-card {
+      padding: 28px 24px;
+    }
+  }
+</style>

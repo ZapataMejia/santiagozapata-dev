@@ -1,15 +1,31 @@
 ---
+import type { Locale } from '../i18n';
+import { messages, localizePath } from '../i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
 interface Props {
+  locale?: Locale;
   title: string;
   description?: string;
 }
 
-const { title, description = 'Santiago Zapata Mejía — QA Automation Lead. Building quality programs that make engineering teams ship faster.' } = Astro.props;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const locale: Locale = Astro.props.locale ?? 'es';
+const { title, description = messages[locale].layout.defaultDescription } = Astro.props;
+const L = messages[locale].layout;
+const lang = locale === 'es' ? 'es' : 'en';
+
+let pathForSwitch = Astro.url.pathname;
+if (pathForSwitch.startsWith('/en')) {
+  pathForSwitch = pathForSwitch.replace(/^\/en(?=\/|$)/, '') || '/';
+}
+const otherLocale: Locale = locale === 'es' ? 'en' : 'es';
+const langSwitchHref = getRelativeLocaleUrl(otherLocale, pathForSwitch);
+
+const p = (path: string) => localizePath(locale, path);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19,14 +35,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
     <meta property="og:site_name" content="Santiago Zapata" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
 
-    <link rel="canonical" href={canonicalURL} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,17 +56,22 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   <body>
     <nav class="nav">
       <div class="nav-inner">
-        <a href="/" class="nav-logo">SZ<span class="accent">.</span></a>
+        <a href={p('/')} class="nav-logo">SZ<span class="accent">.</span></a>
         <div class="nav-links">
-          <a href="/#work">Work</a>
-          <a href="/#projects">Projects</a>
-          <a href="/blog">Blog</a>
-          <a href="/services">Services</a>
-          <a href="/roi-calculator">ROI Calculator</a>
-          <a href="/istqb-practice">ISTQB Practice</a>
-          <a href="/#contact" class="nav-cta">Contact</a>
+          <a href={p('/#work')}>{L.navWork}</a>
+          <a href={p('/#projects')}>{L.navProjects}</a>
+          <a href={p('/blog')}>{L.navBlog}</a>
+          <a href={p('/services')}>{L.navServices}</a>
+          <a href={p('/roi-calculator')}>{L.navRoi}</a>
+          <a href={p('/istqb-practice')}>{L.navIstqb}</a>
+          <div class="nav-lang">
+            <a href={langSwitchHref} class="nav-lang-link" hreflang={otherLocale === 'es' ? 'es' : 'en'}>
+              {otherLocale === 'es' ? L.langEs : L.langEn}
+            </a>
+          </div>
+          <a href={p('/#contact')} class="nav-cta">{L.navContact}</a>
         </div>
-        <button class="nav-toggle" aria-label="Toggle menu">
+        <button class="nav-toggle" aria-label={L.ariaMenu}>
           <span></span>
           <span></span>
         </button>
@@ -58,13 +79,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     </nav>
 
     <div class="mobile-menu">
-      <a href="/#work">Work</a>
-      <a href="/#projects">Projects</a>
-      <a href="/blog">Blog</a>
-      <a href="/services">Services</a>
-      <a href="/roi-calculator">ROI Calculator</a>
-      <a href="/istqb-practice">ISTQB Practice</a>
-      <a href="/#contact">Contact</a>
+      <a href={p('/#work')}>{L.navWork}</a>
+      <a href={p('/#projects')}>{L.navProjects}</a>
+      <a href={p('/blog')}>{L.navBlog}</a>
+      <a href={p('/services')}>{L.navServices}</a>
+      <a href={p('/roi-calculator')}>{L.navRoi}</a>
+      <a href={p('/istqb-practice')}>{L.navIstqb}</a>
+      <a href={langSwitchHref}>{otherLocale === 'es' ? L.langEs : L.langEn}</a>
+      <a href={p('/#contact')}>{L.navContact}</a>
     </div>
 
     <main>
@@ -75,18 +97,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       <div class="container">
         <div class="footer-inner">
           <div class="footer-brand">
-            <a href="/" class="nav-logo">SZ<span class="accent">.</span></a>
-            <p>Building quality into every release.</p>
+            <a href={p('/')} class="nav-logo">SZ<span class="accent">.</span></a>
+            <p>{L.footerTagline}</p>
           </div>
           <div class="footer-links">
             <a href="https://github.com/ZapataMejia" target="_blank" rel="noopener noreferrer">GitHub</a>
             <a href="https://linkedin.com/in/zapatamejia" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             <a href="mailto:szapatamejia193@gmail.com">Email</a>
-            <a href="/Santiago_Zapata_QA_CV_EN.pdf" download>Resume</a>
+            <a href="/Santiago_Zapata_QA_CV_EN.pdf" download>{L.footerResume}</a>
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} Santiago Zapata Mejía. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Santiago Zapata Mejía. {L.footerRights}</p>
         </div>
       </div>
     </footer>
@@ -261,7 +283,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     line-height: 1.7;
   }
 
-  /* Fade-in animation */
   .fade-in {
     opacity: 0;
     transform: translateY(30px);
@@ -278,7 +299,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   .fade-in:nth-child(3) { transition-delay: 0.2s; }
   .fade-in:nth-child(4) { transition-delay: 0.3s; }
 
-  /* Navigation */
   .nav {
     position: fixed;
     top: 0;
@@ -322,17 +342,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   .nav-links {
     display: none;
     align-items: center;
-    gap: 36px;
+    gap: 28px;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .nav-links {
       display: flex;
     }
   }
 
   .nav-links a {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--text-secondary);
     transition: color var(--transition);
     font-weight: 500;
@@ -340,6 +360,27 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
   .nav-links a:hover {
     color: var(--text);
+  }
+
+  .nav-lang {
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-lang-link {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    color: var(--accent) !important;
+  }
+
+  .nav-lang-link:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
   }
 
   .nav-cta {
@@ -365,7 +406,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     padding: 4px;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .nav-toggle {
       display: none;
     }
@@ -424,7 +465,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     color: var(--accent);
   }
 
-  /* Footer */
   .footer {
     border-top: 1px solid var(--border);
     padding: 60px 0 40px;
@@ -470,7 +510,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     font-size: 0.85rem;
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
   }
@@ -488,7 +527,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     background: var(--text-tertiary);
   }
 
-  /* Selection */
   ::selection {
     background: var(--accent);
     color: var(--bg);

@@ -1,0 +1,164 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { snippetStep, snippetRoute, snippetToPass } from '../../content/snippets/playwright-tricks-es';
+
+const title = '5 trucos de Playwright que me ahorraron horas';
+const date = '25 mar 2026';
+const readTime = '6 min';
+
+const stepHeading = '1. test.step() para informes legibles';
+const routeHeading = '2. page.route() para mockear APIs';
+const toPassHeading = '3. expect().toPass() con reintentos';
+const lastFailedHeading = '4. La bandera --last-failed';
+const traceHeading = '5. Trace viewer en lugar de solo capturas';
+
+const traceOptTok = "trace: 'on-first-retry'";
+const parallelConfigureTok = "test.describe.configure({ mode: 'parallel' })";
+---
+
+<BaseLayout
+  locale="es"
+  title={`${title} — Santiago Zapata Mejía`}
+  description="Cinco patrones prácticos de Playwright: test.step, route, toPass, --last-failed y trace viewer."
+>
+  <article class="article">
+    <div class="article-container">
+      <a href="/blog" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+
+      <header class="article-header fade-in">
+        <div class="article-meta">
+          <span class="article-tag">Playwright</span>
+          <span class="article-date">{date} · {readTime}</span>
+        </div>
+        <h1 class="article-title">{title}</h1>
+        <p class="article-subtitle">
+          Llevo años usando Playwright a diario. Estos cinco trucos me ahorraron más horas de las que quiero admitir — y están listos para copiar en tu suite.
+        </p>
+      </header>
+
+      <div class="article-body fade-in">
+        <p>
+          Si quieres ver cómo los aplico en un proyecto real, mira el framework open source que mantengo:
+          <a href="https://github.com/ZapataMejia/playwright-automation-framework" target="_blank" rel="noopener noreferrer">playwright-automation-framework</a>
+          (POM, fixtures y CI listos para producción).
+        </p>
+
+        <h2>{stepHeading}</h2>
+        <p>
+          Envuelve bloques lógicos en pasos con nombre. Cuando un test falle a las 2:00, el reporte te dice exactamente en qué fase ocurrió — no solo la línea genérica.
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetStep}</span></pre>
+
+        <h2>{routeHeading}</h2>
+        <p>
+          Deja de depender del estado de staging para probar la UI. Intercepta la ruta, devuelve JSON estable y enfócate en el flujo del usuario.
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetRoute}</span></pre>
+
+        <h2>{toPassHeading}</h2>
+        <p>
+          En lugar de <span class="tok">waitForTimeout</span> frágiles, deja que Playwright reintente la aserción hasta que pase o venza el timeout. Más limpio y más estable.
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetToPass}</span></pre>
+
+        <h2>{lastFailedHeading}</h2>
+        <p>
+          Vuelve a ejecutar solo lo que rompió. En una suite de 400+ tests, esto por sí solo me partió el tiempo de depuración por la mitad.
+        </p>
+
+        <h2>{traceHeading}</h2>
+        <p>
+          Las capturas son 2015. El trace te da línea de tiempo completa: red, DOM, consola y acciones. Configura <span class="tok">{traceOptTok}</span> (o <span class="tok">retain-on-failure</span>) en CI y abre el ZIP en el viewer local.
+        </p>
+
+        <p>
+          <strong>Bonus:</strong> combina <span class="tok">{parallelConfigureTok}</span> con sharding en CI y verás el pipeline pasar de veinte minutos a cinco en proyectos grandes.
+        </p>
+
+        <div class="article-author">
+          <div class="author-info">
+            <div class="author-avatar">SZ</div>
+            <div>
+              <div class="author-name">Santiago Zapata Mejía</div>
+              <div class="author-role">QA Automation Lead · Charlas en QAConf Eje Cafetero</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="/blog" class="back-link back-link-bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article { padding: 120px 0 80px; }
+  .article-container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-heading); font-size: 0.88rem; font-weight: 500;
+    color: var(--text-tertiary); transition: color var(--transition); margin-bottom: 48px;
+  }
+  .back-link:hover { color: var(--accent); }
+  .back-link-bottom { margin-bottom: 0; margin-top: 48px; }
+  .article-header { margin-bottom: 48px; padding-bottom: 40px; border-bottom: 1px solid var(--border); }
+  .article-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .article-tag {
+    font-family: var(--font-heading); font-size: 0.75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent);
+    padding: 4px 12px; border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25); background: var(--accent-dim);
+  }
+  .article-date { font-size: 0.85rem; color: var(--text-tertiary); }
+  .article-title {
+    font-family: var(--font-heading); font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 20px;
+  }
+  .article-subtitle { color: var(--text-secondary); font-size: 1.1rem; line-height: 1.7; }
+  .article-body { font-size: 1.05rem; line-height: 1.8; color: var(--text-secondary); }
+  .article-body p { margin-bottom: 1.5em; }
+  .article-body h2 {
+    font-family: var(--font-heading); font-size: 1.5rem; font-weight: 600;
+    color: var(--text); margin-top: 2.5em; margin-bottom: 0.8em; letter-spacing: -0.01em;
+  }
+  .article-body strong { color: var(--text); font-weight: 600; }
+  .article-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .article-body .tok {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.88em;
+    background: var(--bg-elevated); padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--border); color: var(--accent);
+  }
+  .article-body pre.mono-block {
+    margin-bottom: 1.8em; border-radius: 12px; overflow-x: auto;
+    border: 1px solid var(--border); background: #0d0d0d;
+  }
+  .article-body pre.mono-block .mono-inner {
+    display: block; padding: 24px; background: none; border: none;
+    color: #c9d1d9; font-size: 0.85rem; line-height: 1.7; white-space: pre; overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .article-author {
+    margin-top: 64px; padding: 32px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg-elevated);
+  }
+  .author-info { display: flex; align-items: center; gap: 16px; }
+  .author-avatar {
+    width: 48px; height: 48px; border-radius: 50%; background: var(--accent-dim);
+    color: var(--accent); display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-heading); font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .author-name { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; color: var(--text); }
+  .author-role { font-size: 0.88rem; color: var(--text-tertiary); margin-top: 2px; }
+  @media (max-width: 767px) {
+    .article { padding: 100px 0 60px; }
+    .article-body pre.mono-block .mono-inner { font-size: 0.78rem; padding: 16px; }
+    .article-author { padding: 24px; }
+    .author-info { flex-direction: column; text-align: center; }
+  }
+</style>
