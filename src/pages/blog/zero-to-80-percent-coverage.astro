@@ -1,0 +1,573 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const title = 'De 0 a 80% de cobertura en 3 meses: guía práctica';
+const date = '28 feb 2026';
+const readTime = '10 min';
+
+const esc = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const codeFolderStructure = esc(`tests/
+├── auth/
+│   ├── login.spec.ts
+│   ├── signup.spec.ts
+│   ├── password-reset.spec.ts
+│   └── session-management.spec.ts
+├── checkout/
+│   ├── add-to-cart.spec.ts
+│   ├── payment-flow.spec.ts
+│   ├── subscription-upgrade.spec.ts
+│   └── refund-request.spec.ts
+├── quests/
+│   ├── start-quest.spec.ts
+│   ├── complete-quest.spec.ts
+│   └── quest-rewards.spec.ts
+├── inventory/
+│   ├── view-items.spec.ts
+│   ├── use-item.spec.ts
+│   └── purchase-item.spec.ts
+├── pages/
+│   ├── LoginPage.ts
+│   ├── CheckoutPage.ts
+│   ├── QuestPage.ts
+│   └── InventoryPage.ts
+├── fixtures/
+│   ├── auth.ts
+│   ├── test-users.ts
+│   └── test-data.ts
+└── playwright.config.ts`);
+
+const codePlaywrightConfig = esc(`// playwright.config.ts
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests',
+  timeout: 30_000,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 4 : undefined,
+  reporter: [
+    ['html', { open: 'never' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+  ],
+  use: {
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    screenshot: 'only-on-failure',
+    trace: 'on-first-retry',
+    video: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['iPhone 14'] },
+    },
+  ],
+});`);
+
+const codePaymentFlow = esc(`// tests/checkout/payment-flow.spec.ts
+import { test, expect } from '../../fixtures/auth';
+import { CheckoutPage } from '../../pages/CheckoutPage';
+import { InventoryPage } from '../../pages/InventoryPage';
+
+test.describe('Payment Flow', () => {
+  test('should complete purchase with valid card', async ({
+    authenticatedPage: page,
+  }) => {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    const checkout = new CheckoutPage(page);
+    await checkout.proceedToCheckout();
+    await checkout.fillPaymentDetails({
+      cardNumber: '4242424242424242',
+      expiry: '12/28',
+      cvc: '123',
+    });
+    await checkout.confirmPurchase();
+
+    await expect(checkout.successMessage).toContainText('Purchase complete');
+    await expect(checkout.receiptEmail).toBeVisible();
+  });
+
+  test('should show error for declined card', async ({
+    authenticatedPage: page,
+  }) => {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    const checkout = new CheckoutPage(page);
+    await checkout.proceedToCheckout();
+    await checkout.fillPaymentDetails({
+      cardNumber: '4000000000000002', // Stripe test declined card
+      expiry: '12/28',
+      cvc: '123',
+    });
+    await checkout.confirmPurchase();
+
+    await expect(checkout.errorMessage).toContainText('declined');
+    await expect(checkout.retryButton).toBeVisible();
+  });
+
+  test('should preserve cart across page navigation', async ({
+    authenticatedPage: page,
+  }) => {
+    const inventory = new InventoryPage(page);
+    await inventory.navigate();
+    await inventory.addItemToCart('Power Boost Pack');
+
+    await page.goto('/quests');
+    await page.goBack();
+
+    await expect(inventory.cartBadge).toContainText('1');
+  });
+});`);
+---
+
+<BaseLayout
+  locale="es"
+  title={`${title} — Santiago Zapata Mejía`}
+  description="Framework, priorización y patrones de automatización para alcanzar ~80% de cobertura E2E en LingoQuesto en tiempo récord."
+>
+  <article class="article">
+    <div class="article-container">
+      <a href="/blog" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+
+      <header class="article-header fade-in">
+        <div class="article-meta">
+          <span class="article-tag">Tutorial</span>
+          <span class="article-date">{date} · {readTime}</span>
+        </div>
+        <h1 class="article-title">{title}</h1>
+        <p class="article-subtitle">
+          Framework, priorización y patrones que usé para alcanzar ~80% de cobertura E2E en los flujos críticos de LingoQuesto en tiempo récord.
+        </p>
+      </header>
+
+      <div class="article-body fade-in">
+        <p>
+          LingoQuesto es una plataforma EdTech: aprendizaje de idiomas con misiones interactivas. Cuando entré, el producto crecía rápido, features semanales y cero tests automáticos.
+        </p>
+
+        <p>
+          Los bugs se acumulaban: inventario de ítems in-app inestable, checkout —el motor de ingresos— con fallos intermitentes irreproducibles, login generando 15+ tickets de soporte por semana. Todos sabían que había que testear, pero nadie tenía ancho de banda para empezar.
+        </p>
+
+        <p>
+          Tres meses después: ~80% de cobertura en flujos críticos, CI que bloqueaba código roto y volumen de tickets técnicos a la mitad. Así lo hicimos.
+        </p>
+
+        <h2>Semanas 1–2: qué importa de verdad</h2>
+
+        <p>
+          El error típico al partir de cero es querer testear todo. No se puede; si insistes, te quemas antes de ver resultado.
+        </p>
+
+        <p>
+          Empecé con priorización junto a PM, lead dev y soporte, con una pregunta: <strong>“Si esto se rompe, ¿qué más duele al negocio?”</strong>
+        </p>
+
+        <p>La matriz quedó así:</p>
+
+        <ul>
+          <li><strong>Nivel 1 (ingresos):</strong> login/auth, checkout/pago, suscripciones</li>
+          <li><strong>Nivel 2 (core):</strong> completar quests, inventario, leaderboard</li>
+          <li><strong>Nivel 3 (importante pero asumible):</strong> perfil, notificaciones, logros</li>
+          <li><strong>Nivel 4 (nice-to-have):</strong> cosmética, marketing, analytics admin</li>
+        </ul>
+
+        <p>
+          No era solo severidad: era ROI del test. El 1 atrapa lo que cuesta dinero; el 4 a veces ni lo nota el usuario. Nos comprometimos a cubrir bien 1 y 2 antes de tocar el resto.
+        </p>
+
+        <p>
+          Documenté cada flujo crítico como script manual: blueprint para automatizar y, mientras tanto, regresión manual útil para el equipo.
+        </p>
+
+        <h2>Semanas 3–4: cimientos</h2>
+
+        <p>
+          Stack: <strong>Playwright + TypeScript + POM</strong>, mismo enfoque que en DailyBot y otros proyectos porque funciona.
+        </p>
+
+        <p>Las carpetas siguieron el dominio de negocio, no solo la arquitectura técnica:</p>
+
+        <pre><code set:html={codeFolderStructure}></code></pre>
+
+        <p>Config orientada a velocidad y fiabilidad desde el día uno:</p>
+
+        <pre><code set:html={codePlaywrightConfig}></code></pre>
+
+        <p>Decisiones que pagaron después:</p>
+
+        <ul>
+          <li><strong>Reintentos solo en CI.</strong> Local: un flaky debe fallar ya para arreglarlo; en CI, un retry salva cosas del entorno.</li>
+          <li><strong>Trace y vídeo en el primer retry.</strong> Menos debates de “en mi máquina sí”.</li>
+          <li><strong>Proyecto móvil desde el inicio.</strong> ~60% de usuarios en móvil; solo desktop hubiera sido ciego al caso común.</li>
+        </ul>
+
+        <p>
+          A finales de la semana 4: 12 tests sólidos (login, signup, checkout básico), &lt;2 min total, en cada PR.
+        </p>
+
+        <h2>Mes 2: ampliar con método</h2>
+
+        <p>Patrón por cada área nueva:</p>
+
+        <ol>
+          <li><strong>Page Object primero:</strong> selectores, acciones y aserciones comunes — piensas la “API” de la página antes del test.</li>
+          <li><strong>Happy path:</strong> el usuario hace X y funciona; atrapa la regresión más frecuente.</li>
+          <li><strong>Casos de error:</strong> datos inválidos, vacíos, no autorizado — lo que el dev no suele probar a mano.</li>
+          <li><strong>Casos límite desde tickets:</strong> bugs reales &gt; imaginarios; tickets Tier 1/2 de tres meses → tests.</li>
+        </ol>
+
+        <p>Ejemplo de suite de checkout completa:</p>
+
+        <pre><code set:html={codePaymentFlow}></code></pre>
+
+        <p>
+          A finales del mes 2: <strong>67 tests</strong> en auth, checkout, quests e inventario. Cobertura Tier 1 ~95%, Tier 2 ~60%. ~8 min en CI con 4 workers.
+        </p>
+
+        <h2>Mes 3: CI/CD, reporting y equipo</h2>
+
+        <p>
+          Hacer el suite parte del flujo diario, no algo que “solo corre QA”.
+        </p>
+
+        <p>
+          <strong>CI/CD:</strong> smoke rápido (~3 min) en cada PR (auth + checkout) y regresión completa (~12 min) al mergear a staging; ambos obligatorios antes de prod.
+        </p>
+
+        <p>
+          <strong>Reporting:</strong> el HTML de Playwright ayuda, pero el equipo necesitaba más visibilidad. Dashboard simple con cuatro métricas en el tiempo:
+        </p>
+
+        <ul>
+          <li><strong>% cobertura</strong> de flujos críticos automatizados (meta: 80%)</li>
+          <li><strong>Pass rate</strong> por corrida (meta: &gt;98%)</li>
+          <li><strong>Tiempo de ejecución</strong> (full &lt;15 min, smoke &lt;5 min)</li>
+          <li><strong>Defect escape</strong> — bugs en prod que el suite debía haber visto (meta: &lt;5%)</li>
+        </ul>
+
+        <p>
+          <strong>Onboarding:</strong> dos talleres de 1 h: leer fallos y trace viewer; cómo escribir un test al arreglar un bug (sin pretender que devs escriban todo).
+        </p>
+
+        <p>También un <code>TESTING.md</code> en la raíz con:</p>
+
+        <ul>
+          <li>Cómo correr local (<code>npm run test:e2e</code>)</li>
+          <li>Un solo archivo (<code>npx playwright test tests/auth/login.spec.ts</code>)</li>
+          <li>Depurar (<code>npx playwright test --debug</code>)</li>
+          <li>Añadir Page Object, convenciones y estructura</li>
+        </ul>
+
+        <h2>La regla 80/20 de la cobertura</h2>
+
+        <p>
+          Llegamos a ~80% de flujos críticos al cierre del mes 3. Ojo: no es “el 80% de cada clic posible”, sino el ~80% de journeys que concentran ~95% del valor. El 20% restante —admin raro, ajustes cosméticos— puede quedarse manual. Está bien.
+        </p>
+
+        <p><strong>Automatizar:</strong></p>
+        <ul>
+          <li>Flujos de ingreso (checkout, suscripciones, upgrades)</li>
+          <li>Autenticación y autorización</li>
+          <li>Journeys core del producto</li>
+          <li>Integridad de datos (escrituras a BD)</li>
+          <li>Todo lo que ya se rompió en prod (cada bug → test)</li>
+        </ul>
+
+        <p><strong>Dejar manual:</strong></p>
+        <ul>
+          <li>Cosas muy visuales o subjetivas</li>
+          <li>Admin poco usado</li>
+          <li>Landing one-off</li>
+          <li>Exploración que cambia cada sprint</li>
+        </ul>
+
+        <h2>Métricas finales</h2>
+
+        <p>Al cierre de los tres meses:</p>
+
+        <ul>
+          <li><strong>87 tests</strong> en auth, checkout, quests, inventario y APIs</li>
+          <li><strong>~80% cobertura crítica</strong> (Tier 1: 95%, Tier 2: 75%)</li>
+          <li><strong>Suite completa: ~12 min.</strong> Smoke: ~3 min</li>
+          <li><strong>Defect escape ~18% → ~4%</strong></li>
+          <li><strong>Tickets técnicos de soporte −50%</strong></li>
+          <li><strong>3 devs</strong> aportando tests (antes cero)</li>
+        </ul>
+
+        <h2>Consejos si partes de cero</h2>
+
+        <p>
+          <strong>Vende con números.</strong> Coste de bugs: soporte, hotfix, checkout caído — hace inevitable invertir en automatización.
+        </p>
+
+        <p>
+          <strong>Primer test en la semana 1.</strong> No tres semanas de “framework perfecto”; login en CI en cinco días genera momentum.
+        </p>
+
+        <p>
+          <strong>La cola de soporte es tu backlog de tests.</strong> Cada bug en prod es un test que faltaba.
+        </p>
+
+        <p>
+          <strong>Un comando local.</strong> Si hace falta ritual para correr tests, no los correrán.
+        </p>
+
+        <p>
+          <strong>Celebra métricas.</strong> Dashboard visible; cuando el suite evita un ship roto, compártelo — la cultura sigue a la visibilidad.
+        </p>
+
+        <p>
+          <strong>No persigas el 100%.</strong> 80% de lo correcto vence a 100% que tarda 45 min y trae 10 flaky.
+        </p>
+
+        <p>
+          Partir de cero asusta, pero es oportunidad: diseñas sin deuda heredada. Tier a tier, tests tempranos y deja que los resultados se compongan.
+        </p>
+      </div>
+
+      <div class="article-author fade-in">
+        <div class="author-info">
+          <div class="author-avatar">SZ</div>
+          <div>
+            <p class="author-name">Santiago Zapata Mejía</p>
+            <p class="author-role">QA Automation Lead · Programas de calidad para startups</p>
+          </div>
+        </div>
+      </div>
+
+      <a href="/blog" class="back-link back-link-bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    padding: 120px 0 80px;
+  }
+
+  .article-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    transition: color var(--transition);
+    margin-bottom: 48px;
+  }
+
+  .back-link:hover {
+    color: var(--accent);
+  }
+
+  .back-link-bottom {
+    margin-bottom: 0;
+    margin-top: 48px;
+  }
+
+  .article-header {
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .article-tag {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    background: var(--accent-dim);
+  }
+
+  .article-date {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+  }
+
+  .article-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  .article-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  .article-body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .article-body p {
+    margin-bottom: 1.5em;
+  }
+
+  .article-body h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2.5em;
+    margin-bottom: 0.8em;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body h3 {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2em;
+    margin-bottom: 0.6em;
+  }
+
+  .article-body ul,
+  .article-body ol {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+  }
+
+  .article-body li {
+    margin-bottom: 0.6em;
+    line-height: 1.7;
+  }
+
+  .article-body strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .article-body code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+
+  .article-body pre {
+    margin-bottom: 1.8em;
+    border-radius: 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+  }
+
+  .article-body pre code {
+    display: block;
+    padding: 24px;
+    background: none;
+    border: none;
+    color: #c9d1d9;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .article-author {
+    margin-top: 64px;
+    padding: 32px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .author-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .author-role {
+    font-size: 0.88rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 767px) {
+    .article {
+      padding: 100px 0 60px;
+    }
+
+    .article-body pre code {
+      font-size: 0.78rem;
+      padding: 16px;
+    }
+
+    .article-author {
+      padding: 24px;
+    }
+
+    .author-info {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>

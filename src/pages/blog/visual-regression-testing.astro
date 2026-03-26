@@ -1,0 +1,524 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const title = 'Testing visual: detecta bugs de UI antes que tus usuarios';
+const date = '13 mar 2026';
+const readTime = '7 min';
+
+const esc = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const codeScreenshot = esc(`// tests/visual/dashboard.visual.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Dashboard - Visual Regression', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/dashboard');
+    // Wait for fonts and images to fully load
+    await page.waitForLoadState('networkidle');
+    await page.evaluate(() => document.fonts.ready);
+  });
+
+  test('full page snapshot', async ({ page }) => {
+    await expect(page).toHaveScreenshot('dashboard-full.png', {
+      fullPage: true,
+      maxDiffPixelRatio: 0.01,
+    });
+  });
+
+  test('sidebar component snapshot', async ({ page }) => {
+    const sidebar = page.locator('[data-testid="sidebar"]');
+    await expect(sidebar).toHaveScreenshot('sidebar.png');
+  });
+
+  test('responsive - tablet viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expect(page).toHaveScreenshot('dashboard-tablet.png', {
+      fullPage: true,
+      maxDiffPixelRatio: 0.01,
+    });
+  });
+
+  test('responsive - mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expect(page).toHaveScreenshot('dashboard-mobile.png', {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+});`);
+
+const codeFlaky = esc(`// tests/visual/helpers/stabilize.ts
+import { type Page } from '@playwright/test';
+
+export async function stabilizePage(page: Page) {
+  // Disable CSS animations and transitions
+  await page.addStyleTag({
+    content: \`
+      *, *::before, *::after {
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        transition-duration: 0s !important;
+        transition-delay: 0s !important;
+      }
+    \`,
+  });
+
+  // Wait for all fonts to load
+  await page.evaluate(() => document.fonts.ready);
+
+  // Wait for lazy-loaded images
+  await page.evaluate(async () => {
+    const images = Array.from(document.querySelectorAll('img'));
+    await Promise.all(
+      images
+        .filter((img) => !img.complete)
+        .map((img) => new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        }))
+    );
+  });
+}
+
+// Usage in tests:
+// import { stabilizePage } from './helpers/stabilize';
+//
+// test('stable visual snapshot', async ({ page }) => {
+//   await page.goto('/settings');
+//   await stabilizePage(page);
+//
+//   await expect(page).toHaveScreenshot('settings.png', {
+//     mask: [page.locator('.dynamic-timestamp')],
+//   });
+// });`);
+
+const codeCIWorkflow = esc(`# .github/workflows/visual-regression.yml
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.49.0-noble
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run visual regression tests
+        run: npx playwright test --project=visual
+        continue-on-error: true
+
+      - name: Upload diff artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: test-results/
+          retention-days: 14
+
+      - name: Comment PR with diff summary
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const diffs = fs.readdirSync('test-results')
+              .filter(f => f.includes('-diff'));
+            if (diffs.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: \`## 🔍 Visual Regression Detected\\n\\n\` +
+                  \`**\${diffs.length} screenshot(s)** differ from baseline.\\n\` +
+                  \`Download the \\\`visual-diffs\\\` artifact to review.\\n\\n\` +
+                  \`If these changes are intentional, run:\\n\` +
+                  \`\\\`\\\`\\\`bash\\nnpx playwright test --project=visual --update-snapshots\\n\\\`\\\`\\\`\`
+              });
+            }`);
+---
+
+<BaseLayout
+  locale="es"
+  title={`${title} — Santiago Zapata Mejía`}
+  description="Guía práctica de regresión visual con Playwright: layout, tipografías, colores y vistas responsive antes de producción."
+>
+  <article class="article">
+    <div class="article-container">
+      <a href="/blog" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+
+      <header class="article-header fade-in">
+        <div class="article-meta">
+          <span class="article-tag">Testing visual</span>
+          <span class="article-date">{date} · {readTime}</span>
+        </div>
+        <h1 class="article-title">{title}</h1>
+        <p class="article-subtitle">
+          Guía práctica de regresión visual con Playwright: detectar cambios de layout, tipografía y vistas responsive antes de que lleguen a producción.
+        </p>
+      </header>
+
+      <div class="article-body fade-in">
+        <p>
+          Tus tests funcionales pasan. Los unitarios están verdes. Despliegas con confianza — y un usuario manda una captura: el botón de checkout ya no se ve porque alguien cambió una variable CSS tres componentes arriba. ¿Te suena?
+        </p>
+
+        <p>
+          Los tests funcionales verifican el <em>comportamiento</em>: clics, formularios, aserciones de resultado. Pero no ven cómo se <em>ve</em> la interfaz. Un botón puede estar “correcto” a nivel lógico y aun así quedar fuera de pantalla, tapado o mal coloreado. El testing visual de regresión cierra ese hueco.
+        </p>
+
+        <h2>Los bugs que solo ven los ojos</h2>
+
+        <p>
+          Llevo tiempo ejecutando regresión visual en producción; estos son los fallos que atrapa y que otras capas suelen pasar por alto:
+        </p>
+
+        <ul>
+          <li><strong>Cambios de layout:</strong> Un elemento nuevo empuja el CTA; la grilla rompe en un ancho concreto; desaparece padding de un contenedor padre.</li>
+          <li><strong>Tipografía:</strong> El peso de fuente baja de 600 a 400 tras un upgrade; el line-height lo gana un selector más específico; las webfonts no cargan y cae el fallback del sistema.</li>
+          <li><strong>Color y tokens:</strong> Renombran un token de diseño y el valor antiguo cae en un default silencioso; modo oscuro con contraste roto solo en algunos componentes.</li>
+          <li><strong>Responsive:</strong> El menú móvil tapa el hero; una tabla se desborda en tablet; los targets táctiles quedan por debajo de 44px.</li>
+          <li><strong>Z-index:</strong> Un modal queda detrás del contenido; un tooltip lo recorta un <code>overflow: hidden</code> ancestro.</li>
+        </ul>
+
+        <p>Ninguno rompería una aserción funcional típica; todos molestan al usuario y erosionan confianza en el producto.</p>
+
+        <h2>Cómo funciona la comparación de capturas en Playwright</h2>
+
+        <p>
+          Playwright trae comparación visual con <code>toHaveScreenshot()</code>: sin librerías extra. El flujo es directo:
+        </p>
+
+        <ol>
+          <li><strong>Primera ejecución:</strong> guarda baselines en <code>__snapshots__</code>.</li>
+          <li><strong>Siguientes:</strong> compara píxel a píxel; si el diff supera el umbral, el test falla.</li>
+          <li><strong>Cambios intencionados:</strong> <code>--update-snapshots</code> para aceptar el nuevo estado.</li>
+        </ol>
+
+        <p>
+          Conviene estructurar a varios niveles — página completa, componente y responsive — para cobertura amplia y diagnósticos claros:
+        </p>
+
+        <pre><code set:html={codeScreenshot}></code></pre>
+
+        <p>
+          Así, cuando algo rompe, sabes <em>qué</em> rompió: el diff de página entera avisa el cambio; el de componente acota el sitio exacto.
+        </p>
+
+        <h2>Reducir la flakiness</h2>
+
+        <p>
+          Los tests visuales tienen mala fama de inestables — y a veces la merecen si no estabilizas. Las tres fuentes habituales: animaciones, fuentes y contenido dinámico. Así las abordo:
+        </p>
+
+        <pre><code set:html={codeFlaky}></code></pre>
+
+        <p>Otras tácticas que marcan diferencia:</p>
+
+        <ul>
+          <li><strong>Enmascarar lo dinámico:</strong> opción <code>mask</code> para timestamps, avatares, anuncios o lo que cambie entre ejecuciones.</li>
+          <li><strong>Datos deterministas:</strong> semilla fija en BD para visuales; nombres o listas aleatorias generan diffs falsos.</li>
+          <li><strong>Versionar el navegador:</strong> contenedor Docker con Playwright fijo; motores o parches menores mueven píxeles.</li>
+          <li><strong>Proyecto aparte:</strong> tests visuales en su propio <code>project</code> de Playwright para viewports y umbrales propios.</li>
+        </ul>
+
+        <h2>Integración en CI/CD</h2>
+
+        <p>
+          El valor máximo es correrlos en cada PR. Este es el flujo que uso en GitHub Actions, con artefactos de diff y comentario automático:
+        </p>
+
+        <pre><code set:html={codeCIWorkflow}></code></pre>
+
+        <p>
+          El detalle clave es <code>continue-on-error: true</code> más subida de artefactos: si falla un visual, el PR recibe contexto y cómo actualizar baselines si el cambio es válido. Los revisores descargan expected/actual/diff resaltado.
+        </p>
+
+        <h2>Umbrales estrictos vs permisivos</h2>
+
+        <p>No todos los píxeles pesan igual; yo uso niveles:</p>
+
+        <ul>
+          <li><strong>Estricto (<code>maxDiffPixelRatio: 0.005</code>):</strong> landing, checkout, onboarding — casi pixel-perfect.</li>
+          <li><strong>Estándar (0.01):</strong> la mayoría de pantallas de app; tolera subpíxeles entre entornos.</li>
+          <li><strong>Permisivo (0.03):</strong> dashboards con gráficos o UGC que no puedes enmascarar del todo.</li>
+        </ul>
+
+        <p>
+          El umbral es cuánto cambio visual aceptas antes de revisión humana. Demasiado estricto: ruido. Demasiado laxo: bugs reales. Empecé en 0.01 para todo y ajusté según ruido vs valor.
+        </p>
+
+        <h2>Resultados a seis meses</h2>
+
+        <p>Tras regresión visual en decenas de flujos críticos:</p>
+
+        <ul>
+          <li><strong>23 bugs visuales</strong> antes de producción que los funcionales no verían — incluido un layout en pricing con impacto en conversión.</li>
+          <li><strong>Refactors CSS con mucha más confianza:</strong> migración de tokens en 120+ componentes sin regresiones visuales en prod.</li>
+          <li><strong>Flakiness bajo el 2%</strong> tras estabilización; antes rondaba el ~15%.</li>
+          <li><strong>~45 s de revisión media</strong> por cambio visual gracias a artefactos claros.</li>
+          <li><strong>Suite visual completa &lt; 3 min</strong> en CI con 4 shards.</li>
+        </ul>
+
+        <p>Un solo bug visual evitado en tráfico alto amortiza meses de mantenimiento de la suite.</p>
+
+        <h2>Por dónde empezar</h2>
+
+        <p><strong>Cinco páginas, no cincuenta.</strong> Las de más tráfico y negocio; afina estabilización, CI y umbrales antes de escalar.</p>
+
+        <p><strong>Baselines en el repo,</strong> junto a los tests, para que actualizar capturas sea parte del review del PR.</p>
+
+        <p><strong>Invertir en estabilización al inicio:</strong> cada hora en fuentes, animaciones y máscaras ahorra muchas horas de falsos positivos.</p>
+
+        <p><strong>Actualizar baselines debe ser trivial:</strong> un comando, revisar diffs, commit. Si hace falta SSH a CI, nadie lo hará.</p>
+
+        <p>
+          La regresión visual no lo es todo: es una capa más. Pero es la que atrapa lo que el usuario <em>ve</em>. La implementación completa (config, helpers, workflow) está en el
+          <a href="https://github.com/ZapataMejia/visual-regression-testing" target="_blank" rel="noopener noreferrer">repositorio en GitHub</a>.
+        </p>
+      </div>
+
+      <div class="article-author fade-in">
+        <div class="author-info">
+          <div class="author-avatar">SZ</div>
+          <div>
+            <p class="author-name">Santiago Zapata Mejía</p>
+            <p class="author-role">QA Automation Lead · Programas de calidad para startups</p>
+          </div>
+        </div>
+      </div>
+
+      <a href="/blog" class="back-link back-link-bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    padding: 120px 0 80px;
+  }
+
+  .article-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    transition: color var(--transition);
+    margin-bottom: 48px;
+  }
+
+  .back-link:hover {
+    color: var(--accent);
+  }
+
+  .back-link-bottom {
+    margin-bottom: 0;
+    margin-top: 48px;
+  }
+
+  .article-header {
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .article-tag {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    background: var(--accent-dim);
+  }
+
+  .article-date {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+  }
+
+  .article-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  .article-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  .article-body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .article-body p {
+    margin-bottom: 1.5em;
+  }
+
+  .article-body h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2.5em;
+    margin-bottom: 0.8em;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body h3 {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2em;
+    margin-bottom: 0.6em;
+  }
+
+  .article-body ul,
+  .article-body ol {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+  }
+
+  .article-body li {
+    margin-bottom: 0.6em;
+    line-height: 1.7;
+  }
+
+  .article-body strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .article-body code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+
+  .article-body pre {
+    margin-bottom: 1.8em;
+    border-radius: 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+  }
+
+  .article-body pre code {
+    display: block;
+    padding: 24px;
+    background: none;
+    border: none;
+    color: #c9d1d9;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .article-author {
+    margin-top: 64px;
+    padding: 32px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .author-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .author-role {
+    font-size: 0.88rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 767px) {
+    .article {
+      padding: 100px 0 60px;
+    }
+
+    .article-body pre code {
+      font-size: 0.78rem;
+      padding: 16px;
+    }
+
+    .article-author {
+      padding: 24px;
+    }
+
+    .author-info {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>

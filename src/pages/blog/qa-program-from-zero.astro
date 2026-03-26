@@ -1,0 +1,496 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const title = 'Cómo construí un programa de QA desde cero en una startup de YC';
+const date = '10 mar 2026';
+const readTime = '8 min';
+
+const esc = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const codeLoginPage = esc(`// pages/LoginPage.ts
+import { type Page, type Locator } from '@playwright/test';
+
+export class LoginPage {
+  private readonly emailInput: Locator;
+  private readonly passwordInput: Locator;
+  private readonly submitButton: Locator;
+
+  constructor(private page: Page) {
+    this.emailInput = page.locator('[data-testid="email-input"]');
+    this.passwordInput = page.locator('[data-testid="password-input"]');
+    this.submitButton = page.locator('[data-testid="login-submit"]');
+  }
+
+  async login(email: string, password: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitButton.click();
+    await this.page.waitForURL('**/dashboard');
+  }
+}`);
+
+const codeFolderStructure = esc(`tests/
+├── e2e/
+│   ├── onboarding/
+│   │   ├── signup.spec.ts
+│   │   └── team-setup.spec.ts
+│   ├── check-ins/
+│   │   ├── daily-checkin.spec.ts
+│   │   └── async-responses.spec.ts
+│   ├── integrations/
+│   │   ├── slack-connect.spec.ts
+│   │   └── teams-connect.spec.ts
+│   └── billing/
+│       ├── upgrade-plan.spec.ts
+│       └── cancel-subscription.spec.ts
+├── pages/
+│   ├── LoginPage.ts
+│   ├── DashboardPage.ts
+│   ├── CheckInPage.ts
+│   └── BillingPage.ts
+├── fixtures/
+│   ├── auth.fixture.ts
+│   └── test-data.fixture.ts
+└── playwright.config.ts`);
+
+const codeAuthFixture = esc(`// fixtures/auth.fixture.ts
+import { test as base } from '@playwright/test';
+
+type AuthFixtures = {
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<AuthFixtures>({
+  authenticatedPage: async ({ browser }, use) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    const response = await page.request.post('/api/auth/login', {
+      data: {
+        email: process.env.TEST_USER_EMAIL,
+        password: process.env.TEST_USER_PASSWORD,
+      },
+    });
+
+    const cookies = response.headers()['set-cookie'];
+    await context.addCookies(parseCookies(cookies));
+    await use(page);
+    await context.close();
+  },
+});`);
+
+const codeGhActions = esc(`# .github/workflows/e2e-tests.yml
+name: E2E Tests
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run critical path tests
+        run: npx playwright test --grep @critical
+        env:
+          BASE_URL: \${{ secrets.STAGING_URL }}
+          TEST_USER_EMAIL: \${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: \${{ secrets.TEST_USER_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results
+          path: test-results/`);
+---
+
+<BaseLayout
+  locale="es"
+  title={`${title} — Santiago Zapata Mejía`}
+  description="Infraestructura de automatización, procesos de calidad y cultura desde cero en DailyBot (YC W19)."
+>
+  <article class="article">
+    <div class="article-container">
+      <a href="/blog" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+
+      <header class="article-header fade-in">
+        <div class="article-meta">
+          <span class="article-tag">Estrategia</span>
+          <span class="article-date">{date} · {readTime}</span>
+        </div>
+        <h1 class="article-title">{title}</h1>
+        <p class="article-subtitle">
+          Infraestructura de automatización, procesos de calidad y cultura desde cero en DailyBot (YC W19).
+        </p>
+      </header>
+
+      <div class="article-body fade-in">
+        <p>
+          Cuando entré en DailyBot —startup de Y Combinator W19 de comunicación asíncrona— no había proceso de QA: cero tests automáticos, sin planes de prueba. El equipo entregaba rápido, pero los bugs colaban, los incidentes a usuarios comían velocidad y cada release parecía una moneda al aire.
+        </p>
+
+        <p>
+          Esto es cómo monté un programa de QA desde cero, lo llevé a un pipeline automatizado y reduje defectos en producción ~40%. Si eres QA o liderazgo técnico frente a un lienzo en blanco, va por ti.
+        </p>
+
+        <h2>La auditoría: qué está realmente roto</h2>
+
+        <p>
+          Antes del primer test, las dos primeras semanas las dediqué a algo poco “startup”: frenar y auditar.
+        </p>
+
+        <p>
+          Mapeé flujos críticos: onboarding, check-ins diarios, integraciones Slack y Microsoft Teams, billing y admin. Cruzé con tres meses de bugs y tickets de soporte. Los patrones saltaron:
+        </p>
+
+        <ul>
+          <li><strong>Integraciones</strong> (Slack/Teams): ~35% de bugs reportados</li>
+          <li><strong>Onboarding y billing</strong> con mayor impacto de negocio al romper</li>
+          <li><strong>Regresiones</strong>: casi la mitad del problema en prod —lo que funcionaba volvía a romperse</li>
+          <li><strong>Nadie confiaba en el deploy:</strong> clicks manuales antes de cada release, 2–3 h extra</li>
+        </ul>
+
+        <p>
+          Eso dio munición para un roadmap priorizado sin intentar hervir el océano. Regla uno: no puedes automatizar todo a la vez ni debes.
+        </p>
+
+        <h2>Stack: por qué Playwright y POM</h2>
+
+        <p>La decisión fue entre Cypress, Selenium y Playwright. Playwright ganó porque:</p>
+
+        <ul>
+          <li><strong>Multi-navegador nativo.</strong> Muchos usuarios en Firefox y Safari, no solo Chrome; Cypress entonces era más limitado ahí.</li>
+          <li><strong>async/await real.</strong> API basada en Promesas, sin <code>cy.wait()</code> frágil: escribes el flujo que quieres.</li>
+          <li><strong>Paralelismo integrado.</strong> Contextos en paralelo sin orquestación externa: CI más rápida.</li>
+          <li><strong>Auto-wait e interceptación de red.</strong> Mock de red de primera clase para integraciones sin pegarle a APIs reales de Slack/Teams.</li>
+        </ul>
+
+        <p>
+          En arquitectura elegí <strong>Page Object Model (POM)</strong>: el UI cambia rápido; los selectores y acciones viven en clases dedicadas. Cambia la pantalla, tocas un archivo — no cincuenta tests.
+        </p>
+
+        <pre><code set:html={codeLoginPage}></code></pre>
+
+        <h2>Framework: estructura que escala</h2>
+
+        <p>
+          Organicé carpetas para que cualquier dev nuevo entienda el árbol al minuto. La claridad importa más que el ingenio:
+        </p>
+
+        <pre><code set:html={codeFolderStructure}></code></pre>
+
+        <p>Dos patrones marcaron estabilidad y velocidad:</p>
+
+        <p>
+          <strong>Fixtures de autenticación.</strong> En lugar de login por UI en cada test, fixture que autentica por API e inyecta cookies. Solo eso recortó 40+ s por ejecución.
+        </p>
+
+        <pre><code set:html={codeAuthFixture}></code></pre>
+
+        <p>
+          <strong>Datos de prueba aislados.</strong> Los tests crean datos vía API en <code>beforeEach</code> y limpian en <code>afterEach</code>. Sin cuentas compartidas ni estados corruptos por otra corrida.
+        </p>
+
+        <h2>CI/CD: que los tests bloqueen mal código</h2>
+
+        <p>Sin bloqueo de deploy, los tests son logs caros. Integré dos pipelines:</p>
+
+        <p>
+          <strong>GitHub Actions en PRs.</strong> Subconjunto de flujos críticos (login, check-in core, billing) en ~4 min y feedback rápido.
+        </p>
+
+        <pre><code set:html={codeGhActions}></code></pre>
+
+        <p>
+          <strong>Jenkins para regresión completa.</strong> Todos los navegadores y flujos, nocturno y en staging antes de prod; si falla, deploy bloqueado.
+        </p>
+
+        <p>
+          Añadí notificaciones a Slack por resultados —irónico en una herramienta de comunicación— para visibilidad de calidad sin depender de dashboards.
+        </p>
+
+        <h2>Resultados</h2>
+
+        <p>Tras ~4 meses de iteración, los números hablaron:</p>
+
+        <ul>
+          <li><strong>~40% menos defectos en producción.</strong> Las regresiones casi desaparecieron; lo que escapaba eran casos límite.</li>
+          <li><strong>Ciclos de release ~30% más rápidos.</strong> Menos prueba manual pre-deploy; la CI era la capa de confianza.</li>
+          <li><strong>~50% menos esfuerzo manual repetitivo.</strong> El QA pasó a exploración y diseño de pruebas.</li>
+          <li><strong>Confianza del equipo:</strong> en reviews empezó a oírse “¿añadimos test?”. La calidad dejó de ser solo cuello de botella de QA.</li>
+        </ul>
+
+        <h2>Lecciones clave</h2>
+
+        <p>
+          <strong>Empieza por la auditoría, no por la herramienta.</strong> Sin saber qué probar, automatizas lo incorrecto.
+        </p>
+
+        <p>
+          <strong>Optimiza adopción por devs.</strong> Tests fáciles de correr (<code>npm run test:e2e</code>), de depurar (trace viewer) y de extender (patrones y fixtures documentados).
+        </p>
+
+        <p>
+          <strong>Flaky = P0.</strong> Arreglo en 24 h o cuarentena. Si el equipo ignora rojos, perdiste.
+        </p>
+
+        <p>
+          <strong>No persigas el 100% de cobertura.</strong> Apunté al 20% de flujos que causaban el 80% de bugs: onboarding, billing, integraciones. ~80% de caminos críticos, no de cada tooltip.
+        </p>
+
+        <p>
+          <strong>Los tests deben gatear deploy.</strong> Si no bloquean, son logs caros. Al hacer el suite obligatorio para prod, la relación del equipo con los tests cambió.
+        </p>
+
+        <p>
+          Montar QA desde cero es de lo más gratificante: no solo escribes tests, cambias cómo el equipo piensa el ship. Bien hecho, el impacto se compone release a release.
+        </p>
+      </div>
+
+      <div class="article-author fade-in">
+        <div class="author-info">
+          <div class="author-avatar">SZ</div>
+          <div>
+            <p class="author-name">Santiago Zapata Mejía</p>
+            <p class="author-role">QA Automation Lead · Programas de calidad para startups</p>
+          </div>
+        </div>
+      </div>
+
+      <a href="/blog" class="back-link back-link-bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Volver al blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    padding: 120px 0 80px;
+  }
+
+  .article-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    transition: color var(--transition);
+    margin-bottom: 48px;
+  }
+
+  .back-link:hover {
+    color: var(--accent);
+  }
+
+  .back-link-bottom {
+    margin-bottom: 0;
+    margin-top: 48px;
+  }
+
+  .article-header {
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .article-tag {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    background: var(--accent-dim);
+  }
+
+  .article-date {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+  }
+
+  .article-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  .article-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  .article-body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .article-body p {
+    margin-bottom: 1.5em;
+  }
+
+  .article-body h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2.5em;
+    margin-bottom: 0.8em;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body h3 {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2em;
+    margin-bottom: 0.6em;
+  }
+
+  .article-body ul,
+  .article-body ol {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+  }
+
+  .article-body li {
+    margin-bottom: 0.6em;
+    line-height: 1.7;
+  }
+
+  .article-body strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .article-body code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+
+  .article-body pre {
+    margin-bottom: 1.8em;
+    border-radius: 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+  }
+
+  .article-body pre code {
+    display: block;
+    padding: 24px;
+    background: none;
+    border: none;
+    color: #c9d1d9;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .article-author {
+    margin-top: 64px;
+    padding: 32px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .author-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .author-role {
+    font-size: 0.88rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 767px) {
+    .article {
+      padding: 100px 0 60px;
+    }
+
+    .article-body pre code {
+      font-size: 0.78rem;
+      padding: 16px;
+    }
+
+    .article-author {
+      padding: 24px;
+    }
+
+    .author-info {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>

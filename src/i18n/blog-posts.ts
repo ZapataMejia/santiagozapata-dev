@@ -7,11 +7,23 @@ export type BlogPostMeta = {
   readTime: Record<Locale, string>;
   title: Record<Locale, string>;
   excerpt: Record<Locale, string>;
-  /** Where the full article HTML lives */
-  bodyLocale: 'es' | 'en';
 };
 
 export const blogPosts: BlogPostMeta[] = [
+  {
+    slug: 'playwright-mcp-cursor',
+    tag: { es: 'Playwright + Cursor', en: 'Playwright + Cursor' },
+    date: { es: '26 mar 2026', en: 'March 26, 2026' },
+    readTime: { es: '7 min', en: '7 min read' },
+    title: {
+      es: 'MCP de Playwright en Cursor: crear tests desde el IDE',
+      en: 'Playwright MCP in Cursor: IDE-Native Test Creation',
+    },
+    excerpt: {
+      es: 'Cómo conectar el servidor MCP oficial de Playwright a Cursor para navegar, inspeccionar el DOM y acelerar el diseño de pruebas E2E.',
+      en: 'Wire Playwright’s official MCP server into Cursor to browse, inspect the DOM, and speed up E2E test design with real browser context.',
+    },
+  },
   {
     slug: 'playwright-tricks',
     tag: { es: 'Playwright', en: 'Playwright' },
@@ -25,7 +37,6 @@ export const blogPosts: BlogPostMeta[] = [
       es: 'Desde test.step() hasta el trace viewer: patrones que uso a diario en producción y que puedes aplicar en tu suite.',
       en: 'From test.step() to the trace viewer: patterns I use daily in production and you can apply to your suite.',
     },
-    bodyLocale: 'es',
   },
   {
     slug: 'visual-regression-testing',
@@ -40,7 +51,6 @@ export const blogPosts: BlogPostMeta[] = [
       es: 'Cómo montar un pipeline multi-navegador y multi-viewport que detecta cambios de layout y regresiones CSS.',
       en: 'How to build a multi-browser, multi-viewport visual testing pipeline that catches layout shifts, font changes, and CSS regressions automatically.',
     },
-    bodyLocale: 'en',
   },
   {
     slug: 'qa-program-from-zero',
@@ -55,7 +65,6 @@ export const blogPosts: BlogPostMeta[] = [
       es: 'Infraestructura de automatización, procesos de calidad y cultura desde cero en DailyBot.',
       en: 'A deep dive into building test automation infrastructure, defining quality processes, and creating a culture of quality from the ground up at DailyBot.',
     },
-    bodyLocale: 'en',
   },
   {
     slug: 'ai-driven-e2e-testing',
@@ -70,7 +79,6 @@ export const blogPosts: BlogPostMeta[] = [
       es: 'Cómo la IA puede ampliar cobertura, reducir mantenimiento y encontrar casos límite.',
       en: 'Exploring how AI-augmented testing can improve test coverage, reduce maintenance overhead, and catch edge cases that traditional testing misses.',
     },
-    bodyLocale: 'en',
   },
   {
     slug: 'zero-to-80-percent-coverage',
@@ -85,12 +93,11 @@ export const blogPosts: BlogPostMeta[] = [
       es: 'Framework, priorización y patrones que usé para alcanzar 80% E2E en LingoQuesto.',
       en: 'The exact framework, prioritization strategy, and automation patterns I used to achieve 80% E2E test coverage for LingoQuesto in record time.',
     },
-    bodyLocale: 'en',
   },
 ];
 
-/** Canonical URL for article body (ES under /blog/, EN under /en/blog/). */
-export function postHref(_locale: Locale, slug: string, bodyLocale: 'es' | 'en'): string {
-  if (bodyLocale === 'es') return `/blog/${slug}`;
+/** Article URL for the active site language (ES under /blog/, EN under /en/blog/). */
+export function postHref(locale: Locale, slug: string): string {
+  if (locale === 'es') return `/blog/${slug}`;
   return `/en/blog/${slug}`;
 }

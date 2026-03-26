@@ -27,16 +27,13 @@ const B = messages[locale].blogIndex;
     <div class="container">
       <div class="posts-grid">
         {blogPosts.map((post) => {
-          const href = postHref(locale, post.slug, post.bodyLocale);
-          const showAlt = post.bodyLocale !== locale;
-          const altLabel = post.bodyLocale === 'en' ? B.articleInEnglish : B.articleInSpanish;
+          const href = postHref(locale, post.slug);
           return (
-            <a href={href} class="post-card fade-in" hreflang={post.bodyLocale}>
+            <a href={href} class="post-card fade-in" hreflang={locale}>
               <div class="post-card-top">
                 <span class="post-tag">{post.tag[locale]}</span>
                 <span class="post-meta">
                   {post.date[locale]} · {post.readTime[locale]}
-                  {showAlt && <span class="post-lang-hint">{altLabel}</span>}
                 </span>
               </div>
               <h2 class="post-title">{post.title[locale]}</h2>
@@ -134,17 +131,6 @@ const B = messages[locale].blogIndex;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-  }
-
-  .post-lang-hint {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--accent);
-    padding: 2px 8px;
-    border-radius: 4px;
-    border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
   .post-title {

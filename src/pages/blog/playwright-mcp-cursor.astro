@@ -1,0 +1,323 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const title = 'MCP de Playwright en Cursor: crear tests desde el IDE';
+const date = '26 mar 2026';
+const readTime = '7 min';
+
+const snippetMcpConfig = `// Cursor → Settings → MCP (o .cursor/mcp.json)
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}`;
+
+const snippetTestSketch = `import { test, expect } from '@playwright/test';
+
+test('checkout feliz con datos de prueba', async ({ page }) => {
+  await page.goto('/checkout');
+  await page.getByRole('button', { name: 'Pagar' }).click();
+  await expect(page.getByText('Pago exitoso')).toBeVisible();
+});`;
+---
+
+<BaseLayout
+  locale="es"
+  title={`${title} — Santiago Zapata Mejía`}
+  description="Conecta el MCP oficial de Playwright a Cursor para inspeccionar la app real y diseñar tests E2E más rápido."
+>
+  <article class="article">
+    <div class="article-container">
+      <a href="/blog" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        Volver al blog
+      </a>
+
+      <header class="article-header fade-in">
+        <div class="article-meta">
+          <span class="article-tag">Playwright + Cursor</span>
+          <span class="article-date">{date} · {readTime}</span>
+        </div>
+        <h1 class="article-title">{title}</h1>
+        <p class="article-subtitle">
+          El protocolo MCP (Model Context Protocol) permite que herramientas como Cursor invoquen un navegador real vía Playwright. Así dejas de adivinar
+          selectores a ciegas y pasas a diseñar tests con el DOM y la red delante.
+        </p>
+      </header>
+
+      <div class="article-body fade-in">
+        <h2>Qué aporta frente a “solo Chat”</h2>
+        <p>
+          Un LLM sin navegador puede inventar locators obsoletos o flujos que no existen. Con el <strong>MCP de Playwright</strong>, el asistente puede (según la
+          configuración del servidor) abrir URLs, tomar snapshots accesibles, interactuar con la página y devolverte estructura real de la UI. Tú conviertes
+          eso en <code>getByRole</code>, <code>getByTestId</code> o POMs que sí compilan y pasan en CI.
+        </p>
+
+        <h2>Conectar Playwright MCP en Cursor</h2>
+        <p>
+          Microsoft mantiene un servidor MCP para Playwright (paquete <span class="tok">@playwright/mcp</span>). En Cursor, añádelo como servidor MCP en ajustes
+          o en el fichero de proyecto. Ejemplo mínimo:
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetMcpConfig}</span></pre>
+        <p>
+          Tras guardar, reinicia o recarga MCP en Cursor. Acepta permisos de red la primera vez (<span class="tok">npx</span> descarga lo necesario). En entornos
+          corporativos, fija la versión del paquete en <span class="tok">args</span> en lugar de <span class="tok">@latest</span> para builds reproducibles.
+        </p>
+
+        <h2>Flujo de trabajo para “explotar” la creación de tests</h2>
+        <ol>
+          <li><strong>Levanta la app</strong> en local o apunta a staging; define <span class="tok">baseURL</span> en <span class="tok">playwright.config</span> como siempre.</li>
+          <li>
+            <strong>Pide un snapshot</strong> tras navegar al flujo que quieres cubrir (login, checkout, settings). El snapshot te da árbol de referencias y texto
+            visible —mucho más fiable que pegar HTML crudo en el chat.
+          </li>
+          <li>
+            <strong>Itera en el IDE:</strong> pide al agente que genere un <code>test.describe</code> con pasos nombrados (<code>test.step</code>), aserciones con
+            <code>expect</code> y locators priorizando roles y etiquetas accesibles.
+          </li>
+          <li>
+            <strong>Copia a tu repo</strong>, ejecuta <span class="tok">npx playwright test</span>, ajusta datos de prueba y añade casos negativos que el MCP no
+            sustituye (reglas de negocio, permisos, estados vacíos).
+          </li>
+        </ol>
+
+        <h2>De borrador a suite mantenible</h2>
+        <p>
+          El MCP acelera el <em>discovery</em>; la calidad del suite sigue siendo tuya. Encapsula en Page Objects, usa fixtures de auth por API cuando puedas, y
+          evita depender de clases CSS volátiles. Un esqueleto típico tras una sesión con el agente:
+        </p>
+        <pre class="mono-block"><span class="mono-inner">{snippetTestSketch}</span></pre>
+
+        <h2>Limitaciones que conviene asumir</h2>
+        <ul>
+          <li>No sustituye políticas de datos, contratos de API ni revisión humana de aserciones de negocio.</li>
+          <li>Si la app vive detrás de auth fuerte, prepara cookies/tokens o rutas de login estable antes de pedir automatización larga.</li>
+          <li>Los iframes y algunos entornos restringidos pueden limitar lo que el servidor expone al modelo — documenta esos casos y testéalos aparte.</li>
+        </ul>
+
+        <p>
+          En resumen: <strong>MCP + Cursor + Playwright</strong> es una palanca enorme para pasar de idea a test ejecutable; el truco está en tratar la salida del
+          agente como borrador profesional, no como verdad final. Si quieres ver patrones de suite completos, el repo
+          <a href="https://github.com/ZapataMejia/playwright-automation-framework" target="_blank" rel="noopener noreferrer">playwright-automation-framework</a>
+          sigue siendo mi referencia de estructura POM + CI.
+        </p>
+
+        <div class="article-author">
+          <div class="author-info">
+            <div class="author-avatar">SZ</div>
+            <div>
+              <div class="author-name">Santiago Zapata Mejía</div>
+              <div class="author-role">QA Automation Lead · Charlas en QAConf Eje Cafetero</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="/blog" class="back-link back-link-bottom">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        Volver al blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    padding: 120px 0 80px;
+  }
+  .article-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    transition: color var(--transition);
+    margin-bottom: 48px;
+  }
+  .back-link:hover {
+    color: var(--accent);
+  }
+  .back-link-bottom {
+    margin-bottom: 0;
+    margin-top: 48px;
+  }
+  .article-header {
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .article-tag {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    background: var(--accent-dim);
+  }
+  .article-date {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+  }
+  .article-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+  .article-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+  .article-body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+  .article-body p {
+    margin-bottom: 1.5em;
+  }
+  .article-body h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2.5em;
+    margin-bottom: 0.8em;
+    letter-spacing: -0.01em;
+  }
+  .article-body ol {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+  }
+  .article-body li {
+    margin-bottom: 0.6em;
+    line-height: 1.7;
+  }
+  .article-body ul {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+  }
+  .article-body strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .article-body a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .article-body .tok {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+  .article-body code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+  .article-body pre.mono-block {
+    margin-bottom: 1.8em;
+    border-radius: 12px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+  }
+  .article-body pre.mono-block .mono-inner {
+    display: block;
+    padding: 24px;
+    background: none;
+    border: none;
+    color: #c9d1d9;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .article-author {
+    margin-top: 64px;
+    padding: 32px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .author-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .author-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .author-role {
+    font-size: 0.88rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  @media (max-width: 767px) {
+    .article {
+      padding: 100px 0 60px;
+    }
+    .article-body pre.mono-block .mono-inner {
+      font-size: 0.78rem;
+      padding: 16px;
+    }
+    .article-author {
+      padding: 24px;
+    }
+    .author-info {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>
