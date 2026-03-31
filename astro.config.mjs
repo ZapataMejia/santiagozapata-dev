@@ -2,7 +2,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://santiagozapata.dev',
+  site: 'https://zapatamejia.netlify.app',
   i18n: {
     defaultLocale: 'es',
     locales: ['es', 'en'],
