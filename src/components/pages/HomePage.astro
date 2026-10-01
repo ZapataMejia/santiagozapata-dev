@@ -67,16 +67,16 @@ const desc = messages[locale].layout.defaultDescription;
       <div class="metrics-grid">
         <div class="metric-card fade-in">
           <div class="metric-value">
-            <span class="metric-number" data-target="5000">5,000</span><span class="metric-symbol">+</span>
+            <span class="metric-number" data-target="800">800</span><span class="metric-symbol">+</span>
           </div>
-          <p class="metric-label">{m.metricDefects}</p>
-          <div class="metric-bar"><div class="metric-bar-fill" style="--fill: 85%"></div></div>
+          <p class="metric-label">{m.metricCoverage}</p>
+          <div class="metric-bar"><div class="metric-bar-fill" style="--fill: 90%"></div></div>
         </div>
         <div class="metric-card fade-in">
           <div class="metric-value">
-            <span class="metric-number" data-target="400">400</span><span class="metric-symbol">+</span>
+            <span class="metric-number" data-target="176">176</span><span class="metric-symbol">+</span>
           </div>
-          <p class="metric-label">{m.metricCoverage}</p>
+          <p class="metric-label">{m.metricDefects}</p>
           <div class="metric-bar"><div class="metric-bar-fill" style="--fill: 80%"></div></div>
         </div>
         <div class="metric-card fade-in">
@@ -114,30 +114,6 @@ const desc = messages[locale].layout.defaultDescription;
           <div class="timeline-content">
             <div class="timeline-header">
               <div>
-                <h3 class="timeline-role">{m.timeline.lingo.role}</h3>
-                <p class="timeline-company">{m.timeline.lingo.company} <span class="timeline-tag">{m.timeline.lingo.tag}</span></p>
-              </div>
-              <span class="timeline-date">{m.timeline.lingo.date}</span>
-            </div>
-            <ul class="timeline-list">
-              {m.timeline.lingo.bullets.map((b) => (
-                <li set:html={b} />
-              ))}
-            </ul>
-            <div class="timeline-tags">
-              {m.timeline.lingo.tags.map((t) => <span>{t}</span>)}
-            </div>
-          </div>
-        </div>
-
-        <div class="timeline-item fade-in">
-          <div class="timeline-marker">
-            <div class="timeline-dot"></div>
-            <div class="timeline-line"></div>
-          </div>
-          <div class="timeline-content">
-            <div class="timeline-header">
-              <div>
                 <h3 class="timeline-role">{m.timeline.dailybot.role}</h3>
                 <p class="timeline-company">{m.timeline.dailybot.company} <span class="timeline-tag">{m.timeline.dailybot.tag}</span></p>
               </div>
@@ -150,6 +126,30 @@ const desc = messages[locale].layout.defaultDescription;
             </ul>
             <div class="timeline-tags">
               {m.timeline.dailybot.tags.map((t) => <span>{t}</span>)}
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item fade-in">
+          <div class="timeline-marker">
+            <div class="timeline-dot"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <h3 class="timeline-role">{m.timeline.lingo.role}</h3>
+                <p class="timeline-company">{m.timeline.lingo.company} <span class="timeline-tag">{m.timeline.lingo.tag}</span></p>
+              </div>
+              <span class="timeline-date">{m.timeline.lingo.date}</span>
+            </div>
+            <ul class="timeline-list">
+              {m.timeline.lingo.bullets.map((b) => (
+                <li set:html={b} />
+              ))}
+            </ul>
+            <div class="timeline-tags">
+              {m.timeline.lingo.tags.map((t) => <span>{t}</span>)}
             </div>
           </div>
         </div>
@@ -235,11 +235,26 @@ const desc = messages[locale].layout.defaultDescription;
             <span>Playwright</span>
             <span>Cypress</span>
             <span>Selenium</span>
-            <span>Appium</span>
-            <span>Jest</span>
-            <span>Mocha</span>
+            <span>Robot Framework</span>
+            <span>pytest</span>
+            <span>k6</span>
             <span>API Testing</span>
             <span>Visual Regression</span>
+            <span>POM / fixtures</span>
+            <span>BDD / Cucumber</span>
+          </div>
+        </div>
+        <div class="skill-group fade-in">
+          <h3 class="skill-group-title">{m.skillGroupAi}</h3>
+          <div class="skill-tags">
+            <span>Herder</span>
+            <span>Grok</span>
+            <span>Claude</span>
+            <span>OpenAI</span>
+            <span>Jev (TypeSafe AI)</span>
+            <span>MCP</span>
+            <span>Structured decisions</span>
+            <span>Agent terminals</span>
           </div>
         </div>
         <div class="skill-group fade-in">
@@ -248,9 +263,9 @@ const desc = messages[locale].layout.defaultDescription;
             <span>GitHub Actions</span>
             <span>Jenkins</span>
             <span>Docker</span>
-            <span>AWS</span>
-            <span>Vercel</span>
-            <span>GitLab CI</span>
+            <span>Git</span>
+            <span>Netlify</span>
+            <span>Release gates</span>
           </div>
         </div>
         <div class="skill-group fade-in">
@@ -259,10 +274,11 @@ const desc = messages[locale].layout.defaultDescription;
             <span>TypeScript</span>
             <span>JavaScript</span>
             <span>Python</span>
-            <span>Node.js</span>
-            <span>React</span>
-            <span>Astro</span>
             <span>SQL</span>
+            <span>Bash</span>
+            <span>Java</span>
+            <span>Node.js</span>
+            <span>Astro</span>
           </div>
         </div>
         <div class="skill-group fade-in">
@@ -270,22 +286,22 @@ const desc = messages[locale].layout.defaultDescription;
           <div class="skill-tags">
             <span>QA Strategy</span>
             <span>Test Architecture</span>
-            <span>Team Building</span>
+            <span>Release gates</span>
             <span>Agile / Scrum</span>
             <span>Risk Analysis</span>
-            <span>Process Design</span>
+            <span>Evidence-first QA</span>
           </div>
         </div>
         <div class="skill-group fade-in">
           <h3 class="skill-group-title">{m.skillGroupTools}</h3>
           <div class="skill-tags">
-            <span>Jira</span>
-            <span>TestRail</span>
-            <span>Postman</span>
-            <span>Figma</span>
             <span>Linear</span>
-            <span>Notion</span>
-            <span>Datadog</span>
+            <span>Jira</span>
+            <span>Sentry</span>
+            <span>Slack / Teams / Discord</span>
+            <span>Google Chat</span>
+            <span>Crisp</span>
+            <span>Allure</span>
           </div>
         </div>
       </div>

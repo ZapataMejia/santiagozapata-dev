@@ -1,7 +1,7 @@
 export const en = {
   layout: {
     defaultDescription:
-      'Santiago Zapata Mejía — QA Automation Lead. Quality systems with Playwright + TypeScript, release evidence, and automation that scales.',
+      'Santiago Zapata Mejía — QA Automation Lead. Automated quality with Playwright, Cypress, Selenium, agent terminals (Herder), LLMs (Grok, Claude, OpenAI), and Jev (TypeSafe AI).',
     navWork: 'Work',
     navProjects: 'Projects',
     navBlog: 'Blog',
@@ -20,19 +20,19 @@ export const en = {
     title: 'Santiago Zapata Mejía — QA Automation Lead',
     heroBadge: 'Available for new opportunities',
     heroRole: 'QA Automation Lead · Automation Architect',
-    taglineStart: 'I design quality systems with ',
-    taglineH1: 'Playwright + TypeScript',
+    taglineStart: 'I design automated quality systems with ',
+    taglineH1: 'Playwright, agents & LLMs',
     taglineMid: ' so teams ship with ',
     taglineH2: 'fewer defects',
-    taglineEnd: ', stronger evidence, and automation that scales.',
+    taglineEnd: ', evidence-backed gates, and less manual work.',
     ctaWork: 'View My Work',
     ctaContact: 'Get In Touch',
     ctaCv: 'Download CV',
     impactLabel: 'Impact',
     impactTitle: 'Numbers you can understand',
-    metricDefects: 'Screenshots documenting bugs and releases',
-    metricCoverage: 'Automated Playwright tests',
-    metricUsers: 'Defects found in validation',
+    metricDefects: 'Automation suites stood up',
+    metricCoverage: 'Automated tests (Playwright, Cypress, Selenium)',
+    metricUsers: 'Defects caught in validation',
     metricRelease: 'Product code commits',
     expLabel: 'Experience',
     expTitle: "Where I've made an impact",
@@ -40,8 +40,9 @@ export const en = {
     projLabel: 'Projects',
     projTitle: 'Open source & featured work',
     skillsLabel: 'Skills',
-    skillsTitle: 'My toolkit',
+    skillsTitle: 'My stack',
     skillGroupAutomation: 'Test Automation',
+    skillGroupAi: 'AI & Agents',
     skillGroupCicd: 'CI/CD & DevOps',
     skillGroupProgramming: 'Programming',
     skillGroupStrategy: 'Strategy & Leadership',
@@ -60,18 +61,6 @@ export const en = {
       "Whether you need a QA program built from scratch, a testing strategy overhaul, or a seasoned automation architect — I'd love to hear from you.",
     contactCvValue: 'Download Resume (EN / ES)',
     timeline: {
-      lingo: {
-        role: 'QA Lead & Automation Architect (Responsable de Calidad)',
-        company: 'LingoQuesto',
-        tag: 'EdTech',
-        date: 'Independent contractor',
-        bullets: [
-          'Authored the official <strong>Quality Master Plan</strong>: ready/done criteria, mandatory evidence, and Pass/Fail/Blocked decisions',
-          'Scaled Playwright from near zero to <strong>~56 suites / ~273 tests</strong> and ~80% of critical classroom flows in ~3 months',
-          'Left operations with reproducible proof: <strong>~86 reports</strong>, <strong>~2,650 screenshots</strong>, and staging/production go/no-go ownership',
-        ],
-        tags: ['Playwright', 'TypeScript', 'pytest', 'EdTech'],
-      },
       dailybot: {
         role: 'QA Automation Lead / Product Automation Lead',
         company: 'DailyBot',
@@ -79,10 +68,22 @@ export const en = {
         date: '2023 – Present',
         bullets: [
           'Technical owner of product quality across Slack, Teams, Discord, Google Chat, web, and CLI',
-          'Multi-platform validation system: <strong>~160 audits</strong> and <strong>~311 documented defects</strong>',
-          'Also ship product fixes: <strong>~650 commits</strong> across frontend, API, and chatbot',
+          'Core quality stack with <strong>Herder</strong>, LLMs (<strong>Grok, Claude, OpenAI</strong>) and <strong>Jev (TypeSafe AI)</strong> for structured decisions — more automation, less manual work',
+          'Multi-platform validation: <strong>~160 audits</strong>, <strong>~311 defects</strong>; product fixes: <strong>~650 commits</strong>',
         ],
-        tags: ['Playwright', 'Jenkins', 'Docker', 'Sentry'],
+        tags: ['Playwright', 'Herder', 'Jev', 'LLMs', 'Jenkins', 'Docker'],
+      },
+      lingo: {
+        role: 'QA Lead & Automation Architect (Responsable de Calidad)',
+        company: 'LingoQuesto',
+        tag: 'EdTech',
+        date: 'Mar 2025 – Oct 2026 · 1 yr 7 mos',
+        bullets: [
+          'Authored the official <strong>Quality Master Plan</strong>: ready/done criteria, mandatory evidence, and Pass/Fail/Blocked decisions',
+          'Scaled Playwright from near zero to <strong>~56 suites / ~273 tests</strong> and ~80% of critical classroom flows in ~3 months',
+          'Left operations with reproducible proof: <strong>~86 reports</strong>, HTML deliverables, and staging/production go/no-go ownership',
+        ],
+        tags: ['Playwright', 'TypeScript', 'pytest', 'EdTech'],
       },
       freelance: {
         role: 'Open source · automation frameworks',
@@ -90,10 +91,10 @@ export const en = {
         tag: 'GitHub',
         date: 'Ongoing',
         bullets: [
-          'Public portfolio of frameworks ready for real teams (Playwright, Cypress, API, k6, Robot)',
-          'Bilingual technical blog and templates with CI/CD, Docker, and reporting',
+          'Public portfolio of frameworks ready for real teams (Playwright, Cypress, Selenium, API, k6, Robot)',
+          'Bilingual technical blog and templates with CI/CD, Docker, MCP, and reporting',
         ],
-        tags: ['Open source', 'Playwright', 'Cypress', 'k6'],
+        tags: ['Open source', 'Playwright', 'Cypress', 'Selenium', 'MCP'],
       },
     },
     projects: {
@@ -196,7 +197,7 @@ export const en = {
     faq: [
       {
         q: 'What tools do you work with?',
-        a: 'My core stack includes <strong>Playwright</strong> and <strong>Cypress</strong> for E2E testing, <strong>TypeScript/JavaScript</strong> for test scripting, and <strong>GitHub Actions</strong>, <strong>Jenkins</strong>, and <strong>GitLab CI</strong> for pipeline integration. I also work with Jest, Mocha, Postman for API testing, and tools like TestRail, Jira, and Datadog for reporting and monitoring.',
+        a: 'Core stack: <strong>Playwright</strong>, <strong>Cypress</strong>, <strong>Selenium</strong>, and <strong>Robot Framework</strong> for E2E; <strong>TypeScript / JavaScript / Python</strong>; CI with <strong>Jenkins</strong>, <strong>GitHub Actions</strong>, and Docker. I work with agent terminals (<strong>Herder</strong>), LLMs (<strong>Grok, Claude, OpenAI</strong>), <strong>Jev (TypeSafe AI)</strong> for structured decisions, and <strong>MCP</strong>. Also pytest, k6, Linear, Sentry, and Jira.',
       },
       {
         q: 'Do you work with remote teams?',

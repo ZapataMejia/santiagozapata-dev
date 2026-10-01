@@ -3,7 +3,7 @@ import type { MessagesEn } from './en';
 export const es: MessagesEn = {
   layout: {
     defaultDescription:
-      'Santiago Zapata Mejía — QA Automation Lead. Sistemas de calidad con Playwright + TypeScript, evidencia de release y automatización que escala.',
+      'Santiago Zapata Mejía — QA Automation Lead. Calidad automatizada con Playwright, Cypress, Selenium, agentes (Herder), LLMs (Grok, Claude, OpenAI) y Jev (TypeSafe AI).',
     navWork: 'Experiencia',
     navProjects: 'Proyectos',
     navBlog: 'Blog',
@@ -22,19 +22,19 @@ export const es: MessagesEn = {
     title: 'Santiago Zapata Mejía — QA Automation Lead',
     heroBadge: 'Disponible para nuevas oportunidades',
     heroRole: 'QA Automation Lead · Automation Architect',
-    taglineStart: 'Diseño sistemas de calidad con ',
-    taglineH1: 'Playwright + TypeScript',
+    taglineStart: 'Diseño sistemas de calidad automatizados con ',
+    taglineH1: 'Playwright, agentes y LLMs',
     taglineMid: ' para que los equipos liberen con ',
     taglineH2: 'menos defectos',
-    taglineEnd: ', más evidencia y automatización que escala.',
+    taglineEnd: ', gates con evidencia y menos trabajo manual.',
     ctaWork: 'Ver mi trabajo',
     ctaContact: 'Hablemos',
     ctaCv: 'Descargar CV',
     impactLabel: 'Impacto',
     impactTitle: 'Cifras que se entienden',
-    metricDefects: 'Capturas que documentan bugs y releases',
-    metricCoverage: 'Pruebas automatizadas (Playwright)',
-    metricUsers: 'Defectos encontrados en validación',
+    metricDefects: 'Suites de automatización montadas',
+    metricCoverage: 'Pruebas automatizadas (Playwright, Cypress, Selenium)',
+    metricUsers: 'Defectos atrapados en validación',
     metricRelease: 'Commits en código de producto',
     expLabel: 'Experiencia',
     expTitle: 'Dónde he marcado la diferencia',
@@ -44,6 +44,7 @@ export const es: MessagesEn = {
     skillsLabel: 'Habilidades',
     skillsTitle: 'Mi stack',
     skillGroupAutomation: 'Automatización de pruebas',
+    skillGroupAi: 'IA y agentes',
     skillGroupCicd: 'CI/CD y DevOps',
     skillGroupProgramming: 'Programación',
     skillGroupStrategy: 'Estrategia y liderazgo',
@@ -62,18 +63,6 @@ export const es: MessagesEn = {
       'Si necesitas un programa de QA desde cero, renovar la estrategia de testing o un arquitecto de automatización con experiencia, me encantaría conversar.',
     contactCvValue: 'Descargar CV (EN / ES)',
     timeline: {
-      lingo: {
-        role: 'QA Lead y arquitecto de automatización (Responsable de Calidad)',
-        company: 'LingoQuesto',
-        tag: 'EdTech',
-        date: 'Contrato independiente',
-        bullets: [
-          'Autor del <strong>Plan Maestro de Calidad</strong> oficial: criterios de listo/terminado, evidencia obligatoria y decisión Pass/Fail/Bloqueado',
-          'Escalé Playwright de casi cero a <strong>~56 suites / ~273 pruebas</strong> y ~80% de flujos críticos de aula en ~3 meses',
-          'Dejé la operación con prueba reproducible: <strong>~86 reportes</strong>, <strong>~2.650 capturas</strong> y decisión de salir a staging/producción',
-        ],
-        tags: ['Playwright', 'TypeScript', 'pytest', 'EdTech'],
-      },
       dailybot: {
         role: 'QA Automation Lead / Product Automation Lead',
         company: 'DailyBot',
@@ -81,10 +70,22 @@ export const es: MessagesEn = {
         date: '2023 – Presente',
         bullets: [
           'Dueño técnico de la calidad en Slack, Teams, Discord, Google Chat, web y CLI',
-          'Sistema de validación multiplataforma: <strong>~160 auditorías</strong> y <strong>~311 defectos documentados</strong>',
-          'También corrijo producto: <strong>~650 commits</strong> en frontend, API y chatbot',
+          'Stack de calidad Core con <strong>Herder</strong>, LLMs (<strong>Grok, Claude, OpenAI</strong>) y <strong>Jev (TypeSafe AI)</strong> para decisiones estructuradas — más automatización, menos trabajo manual',
+          'Validación multiplataforma: <strong>~160 auditorías</strong>, <strong>~311 defectos</strong>; correcciones de producto: <strong>~650 commits</strong>',
         ],
-        tags: ['Playwright', 'Jenkins', 'Docker', 'Sentry'],
+        tags: ['Playwright', 'Herder', 'Jev', 'LLMs', 'Jenkins', 'Docker'],
+      },
+      lingo: {
+        role: 'QA Lead y arquitecto de automatización (Responsable de Calidad)',
+        company: 'LingoQuesto',
+        tag: 'EdTech',
+        date: 'Mar 2025 – Oct 2026 · 1 año 7 meses',
+        bullets: [
+          'Autor del <strong>Plan Maestro de Calidad</strong> oficial: criterios de listo/terminado, evidencia obligatoria y decisión Pass/Fail/Bloqueado',
+          'Escalé Playwright de casi cero a <strong>~56 suites / ~273 pruebas</strong> y ~80% de flujos críticos de aula en ~3 meses',
+          'Dejé la operación con prueba reproducible: <strong>~86 reportes</strong>, entregables HTML y decisión de salir a staging/producción',
+        ],
+        tags: ['Playwright', 'TypeScript', 'pytest', 'EdTech'],
       },
       freelance: {
         role: 'Open source · frameworks de automatización',
@@ -92,10 +93,10 @@ export const es: MessagesEn = {
         tag: 'GitHub',
         date: 'Ongoing',
         bullets: [
-          'Portfolio público de frameworks listos para equipos reales (Playwright, Cypress, API, k6, Robot)',
-          'Blog técnico bilingüe y plantillas con CI/CD, Docker y reportes',
+          'Portfolio público de frameworks listos para equipos reales (Playwright, Cypress, Selenium, API, k6, Robot)',
+          'Blog técnico bilingüe y plantillas con CI/CD, Docker, MCP y reportes',
         ],
-        tags: ['Open source', 'Playwright', 'Cypress', 'k6'],
+        tags: ['Open source', 'Playwright', 'Cypress', 'Selenium', 'MCP'],
       },
     },
     projects: {
@@ -200,7 +201,7 @@ export const es: MessagesEn = {
     faq: [
       {
         q: '¿Con qué herramientas trabajas?',
-        a: 'Mi stack central incluye <strong>Playwright</strong> y <strong>Cypress</strong> para E2E, <strong>TypeScript/JavaScript</strong> para scripts, y <strong>GitHub Actions</strong>, <strong>Jenkins</strong> y <strong>GitLab CI</strong> para pipelines. También Jest, Mocha, Postman para API, y TestRail, Jira, Datadog para reporting.',
+        a: 'Stack central: <strong>Playwright</strong>, <strong>Cypress</strong>, <strong>Selenium</strong> y <strong>Robot Framework</strong> para E2E; <strong>TypeScript / JavaScript / Python</strong>; CI con <strong>Jenkins</strong>, <strong>GitHub Actions</strong> y Docker. Trabajo con agentes de terminal (<strong>Herder</strong>), LLMs (<strong>Grok, Claude, OpenAI</strong>), <strong>Jev (TypeSafe AI)</strong> para decisiones estructuradas y <strong>MCP</strong>. También pytest, k6, Linear, Sentry y Jira.',
       },
       {
         q: '¿Trabajas en remoto?',
